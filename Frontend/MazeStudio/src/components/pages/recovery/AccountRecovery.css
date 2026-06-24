@@ -1,0 +1,207 @@
+.account_recovery_page {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 32px;
+    font-family: var(--font-primary);
+    background:
+        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.18), transparent 30%),
+        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15), transparent 30%),
+        var(--color-bg, #f8f9ff);
+}
+
+.account_recovery_card {
+    width: min(540px, 100%);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 34px;
+    padding: 42px;
+    box-shadow:
+        0 20px 60px rgba(15, 23, 42, 0.12),
+        0 4px 16px rgba(15, 23, 42, 0.08);
+    text-align: center;
+}
+
+.recovery_icon {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 28px;
+    border-radius: 28px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(
+        135deg,
+        #f00,
+        #f00
+    );
+    color: white;
+    font-size: 2.1rem;
+    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.3);
+}
+
+.account_recovery_card h1 {
+    font-size: clamp(2rem, 4vw, 2.7rem);
+    line-height: 1.1;
+    color: var(--color-text, #111827);
+    margin-bottom: 16px;
+}
+
+.account_recovery_card p {
+    color: var(--color-text-muted, #667085);
+    line-height: 1.8;
+    font-size: 1rem;
+    margin-bottom: 12px;
+}
+
+.account_recovery_card strong {
+    display: inline-block;
+    margin: 12px 0 24px;
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: #f00;
+    background: rgba(99, 102, 241, 0.08);
+    padding: 12px 18px;
+    border-radius: 16px;
+}
+
+.account_recovery_card button {
+    width: 100%;
+    border: 0;
+    border-radius: 18px;
+    padding: 16px;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: 0.25s ease;
+}
+
+.account_recovery_card button:first-of-type {
+    background: linear-gradient(
+        135deg,
+        #6366f1,
+        #8b5cf6
+    );
+    color: white;
+    margin-top: 10px;
+    box-shadow: 0 10px 24px rgba(99, 102, 241, 0.25);
+}
+
+.account_recovery_card button:first-of-type:hover {
+    transform: translateY(-2px);
+}
+
+.account_recovery_card button.secondary {
+    margin-top: 14px;
+    background: #f3f4f6;
+    color: #111827;
+    border: 1px solid #e5e7eb;
+}
+
+.account_recovery_card button.secondary:hover {
+    background: #e5e7eb;
+}
+
+.account_recovery_card button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.account_recovery_loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* DARK MODE */
+
+.darkmode .account_recovery_page,
+.settings-darkmode .account_recovery_page {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(99, 102, 241, 0.2), transparent 30%),
+        radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.18), transparent 30%),
+        #030712;
+}
+
+.darkmode .account_recovery_card,
+.settings-darkmode .account_recovery_card {
+    background: rgba(17, 24, 39, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.darkmode .account_recovery_card h1,
+.settings-darkmode .account_recovery_card h1 {
+    color: #f9fafb;
+}
+
+.darkmode .account_recovery_card p,
+.settings-darkmode .account_recovery_card p {
+    color: #9ca3af;
+}
+
+.darkmode .account_recovery_card strong,
+.settings-darkmode .account_recovery_card strong {
+    background: rgba(99, 102, 241, 0.15);
+    color: #a5b4fc;
+}
+
+.darkmode .account_recovery_card button.secondary,
+.settings-darkmode .account_recovery_card button.secondary {
+    background: #1f2937;
+    color: #f9fafb;
+    border-color: #374151;
+}
+
+.darkmode .account_recovery_card button.secondary:hover,
+.settings-darkmode .account_recovery_card button.secondary:hover {
+    background: #374151;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 640px) {
+    .account_recovery_page {
+        padding: 20px;
+    }
+
+    .account_recovery_card {
+        padding: 30px 24px;
+        border-radius: 28px;
+    }
+
+    .recovery_icon {
+        width: 78px;
+        height: 78px;
+        font-size: 1.8rem;
+    }
+
+    .account_recovery_card h1 {
+        font-size: 2rem;
+    }
+}
+
+.deletion_countdown {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 24px 0;
+}
+
+.deletion_countdown div {
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.18);
+    border-radius: 18px;
+    padding: 16px 10px;
+}
+
+.deletion_countdown strong {
+    display: block;
+    font-size: 1.6rem;
+    color: #6366f1;
+}
+
+.deletion_countdown span {
+    color: #667085;
+    font-size: 0.8rem;
+    font-weight: 800;
+}

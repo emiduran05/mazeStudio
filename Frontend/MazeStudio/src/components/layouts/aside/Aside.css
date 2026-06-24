@@ -1,0 +1,251 @@
+.aside_component{
+    border-right: 1px solid var(--color-border);
+    padding: 10px;
+    min-height: 100vh;
+    max-height: 100vh;
+    position: sticky;
+    top: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: 0.3s ease-in-out;
+
+}
+
+.darkmode_aside_feature{
+    background-color: #000;
+    
+
+}
+
+.top_content{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.aside_header_content{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.logo{
+    img{
+        width: 50px;
+    }
+}
+
+.aside_header_content_title{
+    p{
+        font-family: var(--font-primary);
+        font-weight: 700;
+        font-size: 18px;
+    }
+}
+
+.aside_nav_container{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    .link{
+        padding: 14px;
+        color: var(--color-text);
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        font-size: 14px;
+        border-radius: var(--radius-sm);
+        span{
+            font-family: var(--font-primary);
+            font-weight: 600;
+
+        }
+
+        
+    }
+
+    .link:hover{
+        background-color: var(--color-border);
+        transition: 0.3s;
+        span,i{
+            transition: 0.3s;
+            color: var(--color-primary);
+        }
+      
+    }
+}
+
+.active{
+    background-color: var(--color-border);
+    span,i{
+        color: var(--color-primary);
+    }
+
+    
+}
+
+.user_profile{
+    padding: 10px;
+    background-color: var(--color-border-soft);
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    border-radius: var(--radius-sm);
+}
+
+.user_img{
+    img{
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+}
+
+.user_info{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    p{
+        font-size: 16px;
+        font-weight: 600;
+        font-family: var(--font-primary);
+    }
+
+    span{
+        font-size: 14px;
+        font-family: var(--font-primary);
+    }
+}
+
+.darkmode_aside{
+    display: none;
+}
+
+.bottom_content{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.aside_dark {
+    background-color: #08080c;
+    border-right: 1px solid #1f2937;
+    transition: 0.3s ease-in-out;
+
+}
+
+.aside_dark .aside_header_content_title p {
+    color: #f9fafb;
+}
+
+.aside_dark .link {
+    color: #d1d5db;
+}
+
+.aside_dark .link:hover {
+    background-color: #111827;
+}
+
+.aside_dark .link:hover span,
+.aside_dark .link:hover i {
+    color: #8b5cf6;
+}
+
+.aside_dark .active {
+    background-color: #1f2937;
+}
+
+.aside_dark .active span,
+.aside_dark .active i {
+    color: #a78bfa;
+}
+
+.aside_dark .user_profile {
+    background-color: #111827;
+    border: 1px solid #1f2937;
+}
+
+.aside_dark .user_info p {
+    color: #f9fafb;
+}
+
+.aside_dark .user_info span {
+    color: #9ca3af;
+}
+
+.aside_dark .darkmode_aside {
+    background-color: #111827;
+    color: #f9fafb;
+    border: 1px solid #374151;
+}
+
+.darkmode_btn, .light_btn{
+    display: none;
+}
+
+@media (max-width: 800px){
+    .darkmode_btn{
+        display: flex;
+        justify-content: center;
+        background-color: #000;
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        border: 1px solid var(--color-border);
+        }
+
+    .light_btn{
+        display: flex;
+        justify-content: center;
+        background-color: #000;
+        color: #fff;
+        text-align: center;
+        padding: 10px;
+        border: none;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        border: 1px solid var(--color-border);
+    }
+
+        .aside{
+
+            position: fixed;
+            z-index: 999;
+            transition: 0.3s ease-in-out;
+            top: 0;
+            bottom: 0;
+            left: -1000px;
+            width: 50%;
+            background-color: #fff;
+
+
+    }
+
+    .open{
+        left: 0;
+    }
+
+    
+@media (max-width: 600px){
+    .aside{
+        width: 80%;
+    }
+
+}
+
+
+}
+

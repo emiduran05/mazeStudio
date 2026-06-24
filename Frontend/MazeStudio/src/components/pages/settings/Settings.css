@@ -1,0 +1,177 @@
+.settings_main{
+    padding: 25px;
+    
+}
+
+.settings_main_container{
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+.settings_main_container_intro{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-family: var(--font-primary);
+    span{
+        font-size: 14px;
+    }
+}
+
+.settings_title{
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.settings_main_container_grid{
+    display: grid;
+    grid-template-columns: 2fr 5fr;
+    gap: 10px;
+}
+
+
+/**/
+.settings_main {
+    background-color: transparent;
+    color: var(--color-text);
+    transition: 0.3s ease;
+}
+
+.settings-darkmode {
+    --settings-bg: #07111f;
+    --settings-card-bg: #0f172a;
+    --settings-card-soft-bg: #111827;
+    --settings-text: #f8fafc;
+    --settings-text-secondary: #cbd5e1;
+    --settings-text-muted: #94a3b8;
+    --settings-border-dark: rgba(148, 163, 184, 0.18);
+
+    color: var(--settings-text);
+}
+
+.settings-darkmode div {
+    border-color: var(--settings-border-dark);
+}
+
+.settings-darkmode p,
+.settings-darkmode h1,
+.settings-darkmode h2,
+.settings-darkmode h3,
+.settings-darkmode h4,
+.settings-darkmode h5,
+.settings-darkmode h6,
+.settings-darkmode span,
+.settings-darkmode strong,
+.settings-darkmode label {
+    color: var(--settings-text);
+}
+
+.settings-darkmode span,
+.settings-darkmode p {
+    color: var(--settings-text-muted);
+}
+
+.settings-darkmode .settings_title,
+.settings-darkmode h2,
+.settings-darkmode h3,
+.settings-darkmode h4,
+.settings-darkmode .span_title {
+    color: var(--settings-text);
+}
+
+.settings-darkmode .settings_card,
+.settings-darkmode .settings_side_card,
+.settings-darkmode .settings_main_container_grid_element_container {
+    background: var(--settings-card-bg);
+    border-color: var(--settings-border-dark);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+}
+
+.settings-darkmode .setting-link,
+.settings-darkmode .settings_button,
+.settings-darkmode .settings_side_button,
+.settings-darkmode .quick_action,
+.settings-darkmode select,
+.settings-darkmode .integration {
+    background: transparent;
+    color: var(--settings-text);
+    border-color: var(--settings-border-dark);
+}
+
+.settings-darkmode .settings_button,
+.settings-darkmode select,
+.settings-darkmode .integration {
+    background: var(--settings-card-soft-bg);
+}
+
+.settings-darkmode .setting-link:hover,
+.settings-darkmode .setting-active {
+    background: rgba(139, 92, 246, 0.18);
+}
+
+.settings-darkmode .preference_row,
+.settings-darkmode .quick_action,
+.settings-darkmode .setting-link {
+    border-color: var(--settings-border-dark);
+}
+
+.settings-darkmode i {
+    color: var(--settings-text-secondary);
+}
+
+.settings-darkmode .preference_icon i,
+.settings-darkmode .subscription_icon i,
+.settings-darkmode .profile_avatar button i {
+    color: #ffffff;
+}
+
+.settings-darkmode .integration i {
+    color: #8b5cf6;
+}
+
+.settings-darkmode .quick_action.danger h4,
+.settings-darkmode .quick_action.danger i:first-child {
+    color: var(--color-danger);
+}
+
+@media (max-width: 1200px) {
+    .settings_main_container_grid {
+        grid-template-columns: 260px 1fr;
+    }
+
+    .settings_main_container_grid > .settings_main_container_grid_element:nth-child(3) {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 900px) {
+    .settings_main {
+        padding: 18px;
+    }
+
+    .settings_main_container_grid {
+        grid-template-columns: 1fr;
+    }
+
+    .settings_title {
+        font-size: 26px;
+    }
+
+    .settings_main_container_intro span {
+        font-size: 13px;
+    }
+}
+
+@media (max-width: 560px) {
+    .settings_main {
+        padding: 14px;
+    }
+
+    .settings_main_container {
+        gap: 16px;
+    }
+
+    .settings_title {
+        font-size: 24px;
+    }
+}

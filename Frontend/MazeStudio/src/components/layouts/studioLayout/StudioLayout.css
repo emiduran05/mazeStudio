@@ -1,0 +1,47 @@
+.grid_content{
+    display: grid;
+    grid-template-columns: 1fr 4fr;
+    position: relative;
+}
+
+.bg-cover-active{
+    backdrop-filter: blur(6px);
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.6);
+    inset: 0;
+    z-index: 998;
+}
+
+.bg-cover{
+    display: none;
+}
+
+
+.studio_content{
+    background-color: var(--color-bg);
+    min-height: 200vh;
+    transition: 0.3s ease-in-out;
+
+}
+
+.studio_children{
+    padding: 20px;
+}
+
+
+.dark_studio{
+    background-color: #1F2937;
+    transition: 0.3s ease-in-out;
+
+}
+
+@media (max-width: 800px){
+    .grid_content{
+        display: block;
+    }
+
+
+}
+
+
+
