@@ -2,11 +2,13 @@ import "./Aside.css";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { OrbitProgress } from "react-loading-indicators";
+import { useState } from "react";
 
 export default function Aside({ isOpen, darkmode, setDarkmode }) {
 
-    const { user, authLoading } = useAuth();
+    const { user, authLoading, logout } = useAuth();
     const fullName = `${user?.first_name || ""} ${user?.last_name || ""}`.trim();
+    const [quickOptions, setQuickOptions] = useState(false)
 
 
 
@@ -23,7 +25,7 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                         <div className="aside_header_content">
 
                             <div className="logo">
-                                <img src="logo.png" alt="Maze Studio Logo" />
+                                <img src="/logo.png" alt="Maze Studio Logo" />
                             </div>
 
                             <div className="aside_header_content_title">
@@ -63,7 +65,7 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                                 <span>Insights</span>
                             </NavLink>
 
-                            <NavLink to="/my-settings"
+                            <NavLink to="/my-settings/account"
                                 className={({ isActive }) =>
                                     isActive ? "link active" : "link"
                                 }>
@@ -104,6 +106,12 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                     </button>
 
                     <div className="user_profile">
+                        <i className="fa-solid fa-ellipsis-vertical" onClick={() => setQuickOptions(!quickOptions)}></i>
+                        <div className={`quickOptions ${quickOptions ? "quickActive " : ""}`}>
+                            <span>Quick Options</span>
+                            <button onClick={() => {logout()}} >Logout</button>
+                        </div>
+
 
                         <div className="user_img">
                             <img

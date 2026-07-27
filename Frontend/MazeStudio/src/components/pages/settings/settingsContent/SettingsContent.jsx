@@ -33,18 +33,18 @@ export default function SettingsContent() {
 
     const memberSince = user?.created_at
         ? new Date(user.created_at).toLocaleDateString("en-US", {
-              month: "long",
-              day: "numeric",
-              year: "numeric",
-          })
+            month: "long",
+            day: "numeric",
+            year: "numeric",
+        })
         : "Not available";
 
     const roleLabel =
         user?.role === "EDUCATOR"
             ? "Educator"
             : user?.role === "STUDENT"
-            ? "Learner"
-            : user?.role || "User";
+                ? "Learner"
+                : user?.role || "User";
 
     const isDeleteAction = actionModal === "delete" || actionModal === "deactivate";
 
@@ -117,13 +117,30 @@ export default function SettingsContent() {
         setActionLoading(true);
 
         try {
-            await apiRequest("/users/account", {
-                method: "DELETE",
+            const endpoint =
+                actionModal === "deactivate"
+                    ? "/users/account/deactivate"
+                    : "/users/account";
+
+            const method =
+                actionModal === "deactivate"
+                    ? "PATCH"
+                    : "DELETE";
+
+            await apiRequest(endpoint, {
+                method,
                 body: JSON.stringify({
                     password,
-                    reason: reason || "User requested account deletion",
+                    reason:
+                        reason ||
+                        (actionModal === "deactivate"
+                            ? "Temporary deactivation requested"
+                            : "Account deletion requested"),
                 }),
             });
+
+            logout();
+            navigate("/login", { replace: true });
 
             logout();
             navigate("/login", { replace: true });
@@ -412,7 +429,7 @@ export default function SettingsContent() {
                         <p>
                             {actionModal === "delete"
                                 ? "Your account will be scheduled for deletion. You can restore it within 30 days by logging in again."
-                                : "Your account will be temporarily deactivated and scheduled for deletion. You can restore it within 30 days."}
+                                : "Your public Learning Journeys will be hidden from discovery and new enrollments will be disabled"}
                         </p>
 
                         <form onSubmit={handleAccountAction}>

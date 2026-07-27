@@ -33,7 +33,7 @@ async function updateUserProfile(userId, data = {}) {
     timezone: timezone || "America/Mexico_City",
   });
 
-  return await userModel.findUserById(userId);
+  return await userModel.findUserById(userId, true);
 }
 
 
@@ -44,7 +44,7 @@ async function uploadUserAvatar(userId, file) {
     throw error;
   }
 
-  const currentUser = await userModel.findUserById(userId);
+  const currentUser = await userModel.findUserById(userId, true);
 
   const extension = path.extname(file.originalname) || ".png";
   const objectKey = `avatars/${userId}-${Date.now()}${extension}`;
@@ -68,7 +68,7 @@ async function uploadUserAvatar(userId, file) {
     });
   }
 
-  return await userModel.findUserById(userId);
+  return await userModel.findUserById(userId, true);
 }
 
 module.exports = {

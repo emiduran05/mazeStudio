@@ -1,9 +1,8 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./ProtectedRoute.css";
-import "./ProtectedRoute.jsx";
 
-export default function ProtectedPendingRoute({ children }) {
+export default function ProtectedRoute({ children }) {
   const { user, authLoading } = useAuth();
 
   if (authLoading) {
@@ -22,8 +21,6 @@ export default function ProtectedPendingRoute({ children }) {
       </div>
     );
   }
-
-
 
   if (!user) {
     return <Navigate to="/login" replace />;

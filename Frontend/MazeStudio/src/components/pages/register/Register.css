@@ -355,3 +355,87 @@
         flex-direction: column;
     }
 }
+
+.register_alert {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    font-weight: 800;
+}
+
+.register_alert.error {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.register_alert.warning {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #fed7aa;
+}
+
+.account_type_card {
+    position: relative;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.account_type_card.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary-soft);
+    box-shadow: 0 0 0 3px var(--color-primary-soft);
+    transform: translateY(-2px);
+}
+
+.educator_subscription_notice {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg-soft);
+    border-radius: 18px;
+}
+
+.educator_subscription_icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+}
+
+.educator_subscription_notice strong {
+    display: block;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.educator_subscription_notice p {
+    margin: 0;
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.register_button {
+    min-height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.register_button:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+}

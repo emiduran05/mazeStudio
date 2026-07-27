@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 
-function generateToken(user) {
+function generateToken(user, stayLogged = false) {
   return jwt.sign(
     {
       id: user.id,
@@ -9,7 +9,7 @@ function generateToken(user) {
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: process.env.JWT_EXPIRES_IN || "7d",
+      expiresIn: stayLogged ? "30d" : "8h",
     }
   );
 }

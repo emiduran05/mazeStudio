@@ -27,17 +27,17 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function login(email, password) {
-    const data = await apiRequest("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
+  async function login(email, password, stayLogged = false) {
+  const data = await apiRequest("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password, stayLogged }),
+  });
 
-    localStorage.setItem("token", data.token);
-    setUser(data.user);
+  localStorage.setItem("token", data.token);
+  setUser(data.user);
 
-    return data.user;
-  }
+  return data.user;
+}
 
   function logout() {
     localStorage.removeItem("token");

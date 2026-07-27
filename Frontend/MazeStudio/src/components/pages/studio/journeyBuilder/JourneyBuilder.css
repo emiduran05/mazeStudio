@@ -1,0 +1,647 @@
+.journey_builder {
+    padding: 32px;
+    background: var(--color-bg, #f8f9ff);
+    color: var(--color-text, #111827);
+}
+
+.journey_builder_header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 28px;
+    margin-bottom: 30px;
+}
+
+.journey_builder_title {
+    max-width: 760px;
+}
+
+.journey_builder_badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 12px;
+    margin-bottom: 13px;
+    border-radius: 999px;
+    background: var(--color-primary-bg, #eeedff);
+    color: var(--color-primary, #4642ff);
+    font-size: 0.76rem;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.journey_builder_title h1 {
+    margin: 0 0 12px;
+    font-size: clamp(2rem, 4vw, 3.5rem);
+    line-height: 1.04;
+    letter-spacing: -0.045em;
+    color: var(--color-text, #111827);
+}
+
+.journey_builder_title p {
+    margin: 0;
+    max-width: 700px;
+    color: var(--color-text-muted, #667085);
+    font-size: 1rem;
+    line-height: 1.7;
+}
+
+.journey_builder_header_actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
+.builder_primary_button,
+.builder_secondary_button {
+    min-height: 46px;
+    padding: 12px 17px;
+    border-radius: 15px;
+    font-size: 0.92rem;
+    font-weight: 900;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        background 0.2s ease;
+}
+
+.builder_primary_button {
+    border: 0;
+    background: var(--color-primary, #4642ff);
+    color: #ffffff;
+    box-shadow: 0 12px 28px rgba(70, 66, 255, 0.2);
+}
+
+.builder_primary_button:hover {
+    box-shadow: 0 16px 34px rgba(70, 66, 255, 0.27);
+}
+
+.builder_secondary_button {
+    border: 1px solid var(--color-border, #e7e7f5);
+    background: var(--color-surface, #ffffff);
+    color: var(--color-text, #111827);
+}
+
+.builder_secondary_button:hover {
+    background: var(--color-bg-soft, #fafaff);
+}
+
+.journey_builder_workspace {
+    overflow: hidden;
+    background: var(--color-surface, #ffffff);
+    border: 1px solid var(--color-border, #e7e7f5);
+    border-radius: 28px;
+    box-shadow: 0 18px 50px rgba(31, 41, 55, 0.06);
+}
+
+.journey_builder_toolbar {
+    min-height: 82px;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--color-border, #e7e7f5);
+    background: var(--color-bg-soft, #fafaff);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+}
+
+.journey_builder_toolbar > div:first-child {
+    display: grid;
+    gap: 5px;
+}
+
+.journey_builder_toolbar strong {
+    color: var(--color-text, #111827);
+    font-size: 1rem;
+}
+
+.journey_builder_toolbar span {
+    color: var(--color-text-muted, #667085);
+    font-size: 0.86rem;
+}
+
+.builder_toolbar_stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.builder_toolbar_stats > span {
+    min-width: 92px;
+    padding: 10px 13px;
+    border: 1px solid var(--color-border, #e7e7f5);
+    border-radius: 14px;
+    background: var(--color-surface, #ffffff);
+    text-align: center;
+}
+
+.builder_toolbar_stats strong {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--color-primary, #4642ff);
+    font-size: 1.05rem;
+}
+
+.journey_builder_tree {
+    min-height: 420px;
+    padding: 22px;
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(99, 102, 241, 0.055),
+            transparent 25%
+        ),
+        var(--color-surface, #ffffff);
+}
+
+.builder_stage {
+    margin-left: calc(var(--stage-level, 0) * 26px);
+}
+
+.builder_stage + .builder_stage {
+    margin-top: 13px;
+}
+
+.builder_stage_header {
+    min-height: 70px;
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border, #e7e7f5);
+    background: var(--color-surface, #ffffff);
+    border-radius: 19px;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.builder_stage_header:hover {
+    border-color: rgba(70, 66, 255, 0.34);
+    box-shadow: 0 10px 28px rgba(31, 41, 55, 0.07);
+}
+
+.builder_stage_toggle {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 11px;
+    background: transparent;
+    color: var(--color-text-muted, #667085);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+}
+
+.builder_stage_toggle:hover:not(:disabled) {
+    background: var(--color-bg-soft, #fafaff);
+    color: var(--color-primary, #4642ff);
+}
+
+.builder_stage_toggle:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.builder_stage_icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: var(--color-primary-bg, #eeedff);
+    color: var(--color-primary, #4642ff);
+    display: grid;
+    place-items: center;
+    font-size: 1.05rem;
+}
+
+.builder_stage_title {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+}
+
+.builder_stage_title strong {
+    overflow: hidden;
+    color: var(--color-text, #111827);
+    font-size: 0.98rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.builder_stage_title span {
+    color: var(--color-text-muted, #667085);
+    font-size: 0.78rem;
+}
+
+.builder_stage_actions {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.builder_stage_actions button {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--color-border, #e7e7f5);
+    border-radius: 12px;
+    background: var(--color-bg-soft, #fafaff);
+    color: var(--color-text-muted, #667085);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.builder_stage_actions button:hover {
+    border-color: rgba(70, 66, 255, 0.3);
+    background: var(--color-primary-bg, #eeedff);
+    color: var(--color-primary, #4642ff);
+}
+
+.builder_stage_children {
+    position: relative;
+    display: grid;
+    gap: 11px;
+    margin: 10px 0 2px 30px;
+    padding-left: 19px;
+}
+
+.builder_stage_children::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 13px;
+    left: 0;
+    width: 2px;
+    border-radius: 999px;
+    background: var(--color-border, #e7e7f5);
+}
+
+.builder_step {
+    width: 100%;
+    min-height: 62px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 13px;
+    border: 1px solid var(--color-border, #e7e7f5);
+    border-radius: 17px;
+    background: var(--color-bg-soft, #fafaff);
+    color: var(--color-text, #111827);
+    text-align: left;
+    cursor: pointer;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.builder_step:hover {
+    border-color: rgba(70, 66, 255, 0.32);
+    background: var(--color-surface, #ffffff);
+}
+
+.builder_step_icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+    background: var(--color-primary-bg, #eeedff);
+    color: var(--color-primary, #4642ff);
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+}
+
+.builder_step_icon[data-color="blue"] {
+    background: #dbeafe;
+    color: #2563eb;
+}
+
+.builder_step_icon[data-color="green"] {
+    background: #dcfce7;
+    color: #16a34a;
+}
+
+.builder_step_icon[data-color="orange"] {
+    background: #ffedd5;
+    color: #ea580c;
+}
+
+.builder_step_icon[data-color="red"] {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.builder_step_icon[data-color="yellow"] {
+    background: #fef9c3;
+    color: #ca8a04;
+}
+
+.builder_step_content {
+    min-width: 0;
+    display: grid;
+    gap: 4px;
+}
+
+.builder_step_content strong {
+    overflow: hidden;
+    color: var(--color-text, #111827);
+    font-size: 0.9rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.builder_step_content small {
+    color: var(--color-text-muted, #667085);
+    font-size: 0.75rem;
+}
+
+.builder_step_status {
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: var(--color-surface, #ffffff);
+    color: var(--color-text-muted, #667085);
+    font-size: 0.68rem;
+    font-weight: 900;
+}
+
+.builder_step > i:last-child {
+    color: var(--color-text-muted, #667085);
+    font-size: 0.78rem;
+}
+
+.builder_empty_state {
+    min-height: 390px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    padding: 34px;
+    text-align: center;
+}
+
+.builder_empty_icon {
+    width: 78px;
+    height: 78px;
+    margin-bottom: 20px;
+    border-radius: 25px;
+    background: var(--color-primary-bg, #eeedff);
+    color: var(--color-primary, #4642ff);
+    display: grid;
+    place-items: center;
+    font-size: 1.8rem;
+}
+
+.builder_empty_state h2 {
+    margin-bottom: 9px;
+    color: var(--color-text, #111827);
+}
+
+.builder_empty_state p {
+    max-width: 430px;
+    margin: 0 0 22px;
+    color: var(--color-text-muted, #667085);
+    line-height: 1.6;
+}
+
+.journey_builder_loading,
+.journey_builder_error {
+    min-height: calc(100vh - 90px);
+    padding: 30px;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    background: var(--color-bg, #f8f9ff);
+    color: var(--color-text, #111827);
+    text-align: center;
+}
+
+.journey_builder_loading > i,
+.journey_builder_error > i {
+    margin-bottom: 17px;
+    color: var(--color-primary, #4642ff);
+    font-size: 2rem;
+}
+
+.journey_builder_loading h2,
+.journey_builder_error h2 {
+    margin-bottom: 8px;
+}
+
+.journey_builder_loading p,
+.journey_builder_error p {
+    color: var(--color-text-muted, #667085);
+}
+
+.journey_builder_error > i {
+    color: #dc2626;
+}
+
+/* Dark mode */
+
+.dark_studio .journey_builder,
+.dark_studio .journey_builder_loading,
+.dark_studio .journey_builder_error {
+    background: transparent;
+    color: #f9fafb;
+}
+
+.dark_studio .journey_builder_workspace,
+.dark_studio .builder_stage_header {
+    background: #111827;
+    border-color: #253047;
+}
+
+.dark_studio .journey_builder_toolbar,
+.dark_studio .builder_step {
+    background: #0f172a;
+    border-color: #253047;
+}
+
+.dark_studio .journey_builder_tree {
+    background:
+        radial-gradient(
+            circle at 100% 0%,
+            rgba(99, 102, 241, 0.11),
+            transparent 25%
+        ),
+        #0b1220;
+}
+
+.dark_studio .journey_builder_title h1,
+.dark_studio .journey_builder_toolbar strong,
+.dark_studio .builder_stage_title strong,
+.dark_studio .builder_step_content strong,
+.dark_studio .builder_empty_state h2 {
+    color: #f9fafb;
+}
+
+.dark_studio .journey_builder_title p,
+.dark_studio .journey_builder_toolbar span,
+.dark_studio .builder_stage_title span,
+.dark_studio .builder_step_content small {
+    color: #9ca3af;
+}
+
+.dark_studio .builder_secondary_button,
+.dark_studio .builder_toolbar_stats > span,
+.dark_studio .builder_stage_actions button,
+.dark_studio .builder_step_status {
+    background: #1f2937;
+    border-color: #374151;
+    color: #d1d5db;
+}
+
+.dark_studio .builder_stage_children::before {
+    background: #374151;
+}
+
+.dark_studio .builder_step:hover {
+    background: #111827;
+}
+
+/* Responsive */
+
+@media (max-width: 850px) {
+    .journey_builder {
+        padding: 23px;
+    }
+
+    .journey_builder_header {
+        flex-direction: column;
+    }
+
+    .journey_builder_header_actions {
+        width: 100%;
+    }
+
+    .builder_primary_button,
+    .builder_secondary_button {
+        flex: 1;
+    }
+
+    .journey_builder_toolbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 620px) {
+    .journey_builder {
+        padding: 16px;
+    }
+
+    .journey_builder_header_actions,
+    .builder_toolbar_stats {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .builder_primary_button,
+    .builder_secondary_button,
+    .builder_toolbar_stats > span {
+        width: 100%;
+    }
+
+    .journey_builder_tree {
+        padding: 13px;
+    }
+
+    .builder_stage {
+        margin-left: calc(var(--stage-level, 0) * 10px);
+    }
+
+    .builder_stage_header {
+        grid-template-columns: auto auto minmax(0, 1fr);
+    }
+
+    .builder_stage_actions {
+        grid-column: 1 / -1;
+        justify-content: flex-end;
+        padding-top: 5px;
+    }
+
+    .builder_stage_children {
+        margin-left: 13px;
+        padding-left: 13px;
+    }
+
+    .builder_step {
+        grid-template-columns: auto minmax(0, 1fr) auto;
+    }
+
+    .builder_step_status {
+        display: none;
+    }
+}
+
+
+.builder_stage_menu_wrapper {
+    position: relative;
+}
+
+.builder_stage_menu {
+    position: absolute;
+    z-index: 30;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 190px;
+    padding: 7px;
+    border: 1px solid var(--color-border, #e7e7f5);
+    border-radius: 15px;
+    background: var(--color-surface, #fff);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+}
+
+.builder_stage_menu button {
+    width: 100%;
+    height: auto;
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 11px;
+    border: 0;
+    background: transparent;
+}
+
+.builder_stage_menu button.danger {
+    color: #dc2626;
+}
+
+.builder_stage_menu button:hover {
+    background: var(--color-bg-soft, #fafaff);
+}
+
+.dark_studio .builder_stage_menu {
+    background: #111827;
+    border-color: #374151;
+}
+
+.builder_step_icon.has-image {
+    overflow: hidden;
+    padding: 0;
+    background: transparent;
+}
+
+.builder_step_icon.has-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.builder_step_icon > span {
+    font-size: 1.2rem;
+    line-height: 1;
+}

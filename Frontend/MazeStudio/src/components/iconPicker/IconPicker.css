@@ -1,0 +1,47 @@
+.icon_picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+    gap: 9px;
+}
+
+.icon_picker_item {
+    aspect-ratio: 1;
+    border: 1px solid var(--color-border, #e7e7f5);
+    border-radius: 14px;
+    background: var(--color-bg-soft, #fafaff);
+    color: var(--color-text-muted, #667085);
+    cursor: pointer;
+    font-size: 1rem;
+    display: grid;
+    place-items: center;
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        background 0.2s ease,
+        color 0.2s ease;
+}
+
+.icon_picker_item:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-primary, #4642ff);
+    color: var(--color-primary, #4642ff);
+}
+
+.icon_picker_item.selected {
+    border-color: var(--color-primary, #4642ff);
+    background: var(--color-primary-bg, #eeedff);
+    color: var(--color-primary, #4642ff);
+    box-shadow: 0 0 0 3px rgba(70, 66, 255, 0.1);
+}
+
+.dark_studio .icon_picker_item {
+    background: #0f172a;
+    border-color: #374151;
+    color: #9ca3af;
+}
+
+.dark_studio .icon_picker_item.selected {
+    background: rgba(99, 102, 241, 0.18);
+    border-color: #6366f1;
+    color: #c7d2fe;
+}

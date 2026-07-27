@@ -6,7 +6,7 @@ export default function AsideConfig() {
     return (
         <>
             <div className="settings_main_container_grid_element_container">
-                <NavLink to="/my-settings"
+                <NavLink to="/my-settings/account"
                     className={({ isActive }) =>
                         isActive ? "setting-link setting-active" : "setting-link"
                     }>

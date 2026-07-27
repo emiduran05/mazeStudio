@@ -22,23 +22,13 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-if (
-  user?.status ===
-  "PENDING_DELETION"
-) {
-  return (
-    <Navigate
-      to="/account-recovery"
-      replace
-    />
-  );
-}
-
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  
+  if (user.status === "PENDING_DELETION") {
+    return <Navigate to="/account-recovery" replace />;
+  }
 
   return children;
 }

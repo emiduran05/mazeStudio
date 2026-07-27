@@ -2,6 +2,7 @@ import "./StudioLayout.css";
 import Aside from "../aside/Aside";
 import Header from "../header/Header";
 import { useState } from "react";
+import AccountStatusWarning from "../accountWarning/AccountStatusWarning";
 
 export default function DashboardLayout({children}){
 
@@ -11,9 +12,12 @@ export default function DashboardLayout({children}){
     });
 
     return(
+        <>
 
 
+        
         <div className="grid_content">
+
 
             <div onClick={() => {setIsOpen(!isOpen)}} className={isOpen ? "bg-cover-active" : "bg-cover"}></div>
 
@@ -28,6 +32,8 @@ export default function DashboardLayout({children}){
 
 
                 <Header isOpen={isOpen} setIsOpen={setIsOpen} darkmode={darkmode} setDarkmode={setDarkmode}/>
+        <AccountStatusWarning />
+
 
 
 
@@ -36,5 +42,9 @@ export default function DashboardLayout({children}){
             </main>
 
         </div>
+        
+        </>
+
+
     )
 }

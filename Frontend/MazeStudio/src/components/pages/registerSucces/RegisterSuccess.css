@@ -1,0 +1,226 @@
+.register_success_page {
+    min-height: 100vh;
+    background:
+        radial-gradient(
+            circle at 20% 20%,
+            var(--color-primary-glow),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 80% 80%,
+            var(--color-primary-glow-2),
+            transparent 30%
+        ),
+        var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-primary);
+    padding: 30px 7%;
+}
+
+.register_success_nav {
+    display: flex;
+    align-items: center;
+}
+
+.register_success_logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.3rem;
+    font-weight: 900;
+}
+
+.register_success_logo img {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+}
+
+.register_success_content {
+    min-height: calc(100vh - 102px);
+    display: grid;
+    place-items: center;
+    padding: 40px 0;
+}
+
+.register_success_card {
+    width: min(620px, 100%);
+    background: var(--color-surface-glass);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(20px);
+    border-radius: var(--radius-preview);
+    padding: 44px;
+    text-align: center;
+    box-shadow: var(--shadow-card);
+}
+
+.success_icon,
+.processing_icon,
+.error_icon {
+    width: 84px;
+    height: 84px;
+    margin: 0 auto 24px;
+    border-radius: 26px;
+    display: grid;
+    place-items: center;
+    font-size: 2rem;
+}
+
+.success_icon {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.processing_icon {
+    background: #eef2ff;
+    color: var(--color-primary);
+}
+
+.error_icon {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.success_badge,
+.processing_badge,
+.error_badge {
+    display: inline-flex;
+    padding: 8px 13px;
+    border-radius: var(--radius-pill);
+    font-size: 0.82rem;
+    font-weight: 900;
+    margin-bottom: 18px;
+}
+
+.success_badge {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.processing_badge {
+    background: var(--color-primary-bg);
+    color: var(--color-primary);
+}
+
+.error_badge {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.register_success_card h1 {
+    font-size: clamp(2.2rem, 5vw, 3.6rem);
+    line-height: 1.05;
+    letter-spacing: -0.05em;
+    margin-bottom: 18px;
+}
+
+.register_success_card p {
+    max-width: 500px;
+    margin: 0 auto;
+    color: var(--color-text-muted);
+    font-size: 1.05rem;
+    line-height: 1.75;
+}
+
+.success_detail {
+    display: grid;
+    gap: 6px;
+    margin: 26px 0 0;
+    padding: 16px;
+    background: var(--color-bg-soft);
+    border: 1px solid var(--color-border-soft);
+    border-radius: 18px;
+}
+
+.success_detail span {
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+    font-weight: 800;
+}
+
+.success_detail strong {
+    color: var(--color-text);
+}
+
+.success_actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 30px;
+}
+
+.success_primary,
+.success_secondary {
+    border: 0;
+    border-radius: 16px;
+    padding: 14px 20px;
+    font-weight: 900;
+    text-decoration: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+}
+
+.success_primary {
+    background: var(--color-primary);
+    color: #ffffff;
+}
+
+.success_secondary {
+    background: var(--color-bg-soft);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+
+.success_loader {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 28px;
+}
+
+.success_loader span {
+    width: 16px;
+    height: 16px;
+    background: var(--color-primary);
+    border-radius: 50%;
+    animation: successBounce 0.8s infinite alternate;
+}
+
+.success_loader span:nth-child(2) {
+    animation-delay: 0.15s;
+}
+
+.success_loader span:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+@keyframes successBounce {
+    from {
+        opacity: 0.4;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(-12px);
+    }
+}
+
+@media (max-width: 620px) {
+    .register_success_page {
+        padding: 24px;
+    }
+
+    .register_success_card {
+        padding: 32px 22px;
+    }
+
+    .success_actions {
+        flex-direction: column;
+    }
+
+    .success_primary,
+    .success_secondary {
+        width: 100%;
+    }
+}

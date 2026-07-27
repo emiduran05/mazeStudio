@@ -6,6 +6,7 @@ import "./Login.css";
 export default function Login() {
     const navigate = useNavigate();
     const { login } = useAuth();
+    const [stayLogged, setStayLogged] = useState(false);
 
     const [form, setForm] = useState({
         email: "",
@@ -28,8 +29,7 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const loggedUser = await login(form.email, form.password);
-
+            const loggedUser = await login(form.email, form.password, stayLogged);
             if (loggedUser?.status === "PENDING_DELETION") {
                 navigate("/account-recovery", { replace: true });
                 return;
@@ -99,8 +99,12 @@ export default function Login() {
 
                         <div className="login_options">
                             <label className="remember_me">
-                                <input type="checkbox" />
                                 <span>Remember me</span>
+                                <input
+                                    type="checkbox"
+                                    checked={stayLogged}
+                                    onChange={(e) => setStayLogged(e.target.checked)}
+                                />
                             </label>
 
                             <Link to="/forgot-password">Forgot password?</Link>

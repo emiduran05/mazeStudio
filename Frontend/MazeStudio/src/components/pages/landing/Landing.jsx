@@ -49,7 +49,7 @@ export default function Landing() {
                     </p>
 
                     <div className="landing_actions">
-                        <a href="/register" className="btn_primary">Start for $5/month</a>
+                        <a href="/register" className="btn_primary">Start for $10/month</a>
                         <a href="/login" className="btn_secondary">Login</a>
                     </div>
                 </div>
@@ -353,7 +353,7 @@ export default function Landing() {
                     Create learning journeys, personalize every learner path, import your existing
                     material and manage your entire private teaching workflow from one place.
                 </p>
-                <a href="/register" className="btn_primary">Start for $5/month</a>
+                <a href="/register" className="btn_primary">Start for $10/month</a>
             </section>
 
             <footer className="landing_footer">
