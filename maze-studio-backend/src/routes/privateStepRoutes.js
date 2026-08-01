@@ -1,0 +1,13 @@
+const express=require("express");
+const auth=require("../middlewares/authMiddleware");
+const educatorOnly=require("../middlewares/educatorOnlyMiddleware");
+const controller=require("../controllers/privateStepController");
+const router=express.Router();
+router.post("/steps/:stepId/private-links",auth,educatorOnly,controller.create);
+router.get("/steps/:stepId/private-links",auth,educatorOnly,controller.list);
+router.delete("/step-private-links/:linkId",auth,educatorOnly,controller.revoke);
+router.get("/public/steps/private/:token",controller.metadata);
+router.post("/public/steps/private/:token/session",controller.session);
+router.put("/public/steps/private/:token/complete",controller.complete);
+router.post("/public/steps/private/:token/blocks/:blockId/check-answer",controller.check);
+module.exports=router;

@@ -1,9 +1,10 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import "./ProtectedRoute.css";
 
 export default function ProtectedRoute({ children }) {
   const { user, authLoading } = useAuth();
+  const location = useLocation();
 
   if (authLoading) {
     return (
@@ -28,6 +29,18 @@ export default function ProtectedRoute({ children }) {
 
   if (user.status === "PENDING_DELETION") {
     return <Navigate to="/account-recovery" replace />;
+  }
+
+  if (
+    location.pathname.startsWith("/studio") &&
+    (
+      user.role !== "EDUCATOR" ||
+      !["ACTIVE", "TRIALING"].includes(
+        String(user.subscription_status || "").toUpperCase()
+      )
+    )
+  ) {
+    return <Navigate to="/student/become-educator" replace />;
   }
 
   return children;

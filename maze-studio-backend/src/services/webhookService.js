@@ -34,6 +34,17 @@ function unixToDate(timestamp) {
 }
 
 async function handleCheckoutCompleted(session) {
+  if (["OFFERING_PURCHASE","OFFERING_WEEKLY_SUBSCRIPTION"].includes(session.metadata?.mazeStudioCheckoutKind)) {
+    const marketplaceModel = require("../models/marketplaceModel");
+    if(session.customer)await marketplaceModel.saveCustomer(session.metadata.mazeStudioUserId,typeof session.customer==="string"?session.customer:session.customer.id);
+    await marketplaceModel.fulfillOrder(
+      session.metadata.mazeStudioOrderId,
+      session.payment_intent || null,
+      false,
+      session.subscription || null
+    );
+    return;
+  }
   const userId =
     session.metadata?.mazeStudioUserId ||
     session.client_reference_id;
@@ -93,48 +104,11 @@ async function handleCheckoutCompleted(session) {
   }
 }
 
-async function handleSubscriptionUpdated(subscription) {
-  await webhookModel.updateSubscription({
-    stripeSubscriptionId: subscription.id,
-    status: subscription.status,
-    currentPeriodStart: unixToDate(subscription.current_period_start),
-    currentPeriodEnd: unixToDate(subscription.current_period_end),
-    cancelAtPeriodEnd: subscription.cancel_at_period_end,
-  });
-
-  const userId =
-    subscription.metadata?.mazeStudioUserId ||
-    await webhookModel.findUserIdBySubscriptionId(subscription.id);
-
-  if (userId) {
-    const paymentMethod =
-      await getEffectivePaymentMethod(subscription);
-
-    if (paymentMethod?.id && paymentMethod?.card) {
-      await webhookModel.upsertPaymentMethod({
-        userId,
-        stripePaymentMethodId: paymentMethod.id,
-        brand: paymentMethod.card.brand,
-        last4: paymentMethod.card.last4,
-        expMonth: paymentMethod.card.exp_month,
-        expYear: paymentMethod.card.exp_year,
-      });
-    }
-  }
-
-  if (
-    ["canceled", "unpaid", "incomplete_expired"].includes(
-      subscription.status
-    )
-  ) {
-    await webhookModel.deactivateEducatorBySubscription(
-      subscription.id
-    );
-  }
-}
-
 async function processStripeEvent(event) {
   switch (event.type) {
+    case "account.updated": {
+      const connectService=require("./connectService");await connectService.syncAccount(event.data.object);break;
+    }
     case "checkout.session.completed":
       await handleCheckoutCompleted(event.data.object);
       break;
@@ -161,6 +135,21 @@ async function processStripeEvent(event) {
         `Invoice payment failed: ${event.data.object.id}`
       );
       break;
+
+    case "invoice.paid": {
+      const invoice=event.data.object;
+      if(invoice.subscription){
+        const subscription=await stripe.subscriptions.retrieve(invoice.subscription);
+        if(subscription.metadata?.mazeStudioCheckoutKind==="OFFERING_WEEKLY_SUBSCRIPTION"){
+          const marketplaceModel=require("../models/marketplaceModel");
+          await marketplaceModel.extendWeeklySchedule(subscription.metadata.mazeStudioOrderId,4);
+          if(invoice.billing_reason!=="subscription_create"){
+            await marketplaceModel.recordSubscriptionRenewal(subscription.metadata.mazeStudioOrderId,invoice);
+          }
+        }
+      }
+      break;
+    }
 
     default:
       console.log(`Unhandled Stripe event: ${event.type}`);
@@ -272,6 +261,15 @@ async function handleCustomerUpdated(customerEvent) {
   });
 }
 async function handleSubscriptionUpdated(subscription) {
+  if (subscription.metadata?.mazeStudioCheckoutKind === "OFFERING_WEEKLY_SUBSCRIPTION") {
+    await webhookModel.updateOfferingSubscription(
+      subscription.id,
+      subscription.status,
+      subscription.cancel_at_period_end,
+      unixToDate(subscription.current_period_end)
+    );
+    return;
+  }
   await webhookModel.updateSubscription({
     stripeSubscriptionId: subscription.id,
     status: subscription.status,

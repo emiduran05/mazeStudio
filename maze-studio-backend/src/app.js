@@ -12,6 +12,31 @@ const learningJourneyRoutes = require("./routes/learningJourneyRoutes");
 const stageRoutes = require("./routes/stageRoutes");
 const stepRoutes = require("./routes/stepRoutes");
 const errorHandler = require("./middlewares/errorHandler");
+const blockRoutes = require(
+  "./routes/blockRoutes"
+);
+const enrollmentRoutes = require(
+  "./routes/enrollmentRoutes"
+);
+const learnerRoutes = require(
+  "./routes/learnerRoutes"
+);
+const challengeRoutes = require("./routes/challengeRoutes");
+const publicChallengeRoutes = require("./routes/publicChallengeRoutes");
+const learnerProfileRoutes = require("./routes/learnerProfileRoutes");
+const privateStepRoutes = require("./routes/privateStepRoutes");
+const learningPathRoutes = require("./routes/learningPathRoutes");
+const collaboratorRoutes = require("./routes/collaboratorRoutes");
+const insightsRoutes = require("./routes/insightsRoutes");
+const calendarRoutes = require("./routes/calendarRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const offeringRoutes = require("./routes/offeringRoutes");
+const cohortRoutes = require("./routes/cohortRoutes");
+const sessionSeriesRoutes = require("./routes/sessionSeriesRoutes");
+const marketplaceRoutes = require("./routes/marketplaceRoutes");
+const connectRoutes = require("./routes/connectRoutes");
+const refundRoutes = require("./routes/refundRoutes");
+const educatorProfileRoutes = require("./routes/educatorProfileRoutes");
 
 const app = express();
 
@@ -30,6 +55,25 @@ app.use("/api/billing", billingRoutes);
 app.use("/api/learning-journeys", learningJourneyRoutes);
 app.use("/api", stageRoutes);
 app.use("/api", stepRoutes);
+app.use("/api", blockRoutes);
+app.use("/api", enrollmentRoutes);
+app.use("/api/learner", learnerRoutes);
+app.use("/api", challengeRoutes);
+app.use("/api", learnerProfileRoutes);
+app.use("/api", privateStepRoutes);
+app.use("/api", learningPathRoutes);
+app.use("/api", collaboratorRoutes);
+app.use("/api", insightsRoutes);
+app.use("/api", calendarRoutes);
+app.use("/api", notificationRoutes);
+app.use("/api", offeringRoutes);
+app.use("/api", cohortRoutes);
+app.use("/api", sessionSeriesRoutes);
+app.use("/api", marketplaceRoutes);
+app.use("/api", connectRoutes);
+app.use("/api", refundRoutes);
+app.use("/api", educatorProfileRoutes);
+app.use("/api/public", publicChallengeRoutes);
 
 app.use(errorHandler);
 

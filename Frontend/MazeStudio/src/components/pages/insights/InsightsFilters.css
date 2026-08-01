@@ -1,0 +1,26 @@
+.insights_scope_bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    max-width: 1450px;
+    margin: 0 auto 18px;
+    padding: 15px 17px;
+    border: 1px solid #e1e5ef;
+    border-radius: 16px;
+    background: #fff;
+}
+.insights_scope_bar > div { display: flex; align-items: center; gap: 12px; }
+.insights_scope_bar > div > i { display: grid; place-items: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px; background: #eef2ff; color: #4f46e5; }
+.insights_scope_bar > div > span { display: grid; gap: 3px; }
+.insights_scope_bar small { color: #7c8698; }
+.insights_scope_bar label { display: flex; align-items: center; gap: 10px; color: #667085; font-size: .75rem; font-weight: 750; }
+.insights_scope_bar select { width: min(390px, 42vw); height: 42px; padding: 0 38px 0 13px; border: 1px solid #d8ddea; border-radius: 11px; outline: none; background: #fafbff; color: #172033; font-weight: 700; }
+.insights_scope_bar select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+.dark_studio .insights_scope_bar { border-color: #293548; background: #111c2d; }
+.dark_studio .insights_scope_bar select { border-color: #344357; background: #172337; color: #f8fafc; }
+@media (max-width: 640px) {
+    .insights_scope_bar { align-items: stretch; flex-direction: column; }
+    .insights_scope_bar label { align-items: stretch; flex-direction: column; }
+    .insights_scope_bar select { width: 100%; }
+}

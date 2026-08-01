@@ -1,0 +1,7 @@
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { apiRequest } from "../../../api/api";
+import ContentRenderer from "../../contentRenderer/ContentRenderer";
+import "./PublicStepPreview.css";
+
+export default function PublicStepPreview(){const {journeyId,stepId}=useParams(),[step,setStep]=useState(null),[error,setError]=useState("");useEffect(()=>{apiRequest(`/marketplace/journeys/${journeyId}/preview/steps/${stepId}`).then(x=>setStep(x.step)).catch(e=>setError(e.message))},[journeyId,stepId]);if(!step)return <div className="marketplace_status">{error||<><i className="fa-solid fa-spinner fa-spin"/> Loading free preview…</>}</div>;return <div className="public_step_preview"><Link to={`/marketplace/journeys/${journeyId}`}><i className="fa-solid fa-arrow-left"/> Back to course</Link><header>{step.image_url&&<img src={step.image_url} alt=""/>}<div><span>FREE COURSE PREVIEW · {step.stage_title}</span><h1>{step.title}</h1>{step.description&&<p>{step.description}</p>}<small><i className="fa-regular fa-clock"/> {step.estimated_minutes?`${step.estimated_minutes} minutes`:"Flexible duration"}</small></div></header><section><ContentRenderer blocks={step.blocks||[]}/></section><aside><div><i className="fa-solid fa-lock-open"/><span><strong>You have reached the end of this free preview</strong><small>Enroll to unlock the complete Learning Journey, activities and progress tracking.</small></span></div><Link to={`/marketplace/journeys/${journeyId}`}>View learning options</Link></aside></div>}

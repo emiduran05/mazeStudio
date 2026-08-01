@@ -1,0 +1,10 @@
+const router=require("express").Router();
+const auth=require("../middlewares/authMiddleware");
+const educator=require("../middlewares/educatorOnlyMiddleware");
+const upload=require("../middlewares/blockAssetUploadMiddleware");
+const controller=require("../controllers/educatorProfileController");
+router.get("/educators/:identifier",controller.publicProfile);
+router.get("/educator-profile/me",auth,educator,controller.mine);
+router.put("/educator-profile/me",auth,educator,controller.save);
+router.post("/educator-profile/me/assets",auth,educator,upload.single("file"),controller.upload);
+module.exports=router;

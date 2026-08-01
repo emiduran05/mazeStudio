@@ -7,11 +7,9 @@ async function stripeWebhook(req, res) {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
+    const secrets=[process.env.STRIPE_WEBHOOK_SECRET,process.env.STRIPE_CONNECT_WEBHOOK_SECRET].filter(Boolean);let lastError;
+    for(const secret of secrets){try{event=stripe.webhooks.constructEvent(req.body,signature,secret);break}catch(error){lastError=error}}
+    if(!event)throw lastError||new Error("No Stripe webhook secret configured");
   } catch (error) {
     console.error("Stripe webhook signature error:", error.message);
 

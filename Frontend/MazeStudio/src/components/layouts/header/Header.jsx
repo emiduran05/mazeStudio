@@ -5,10 +5,11 @@ import Notifications from "./notifications/Notifications";
 export default function Header({ isOpen, setIsOpen, darkmode, setDarkmode }) {
 
     const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+    const [unreadCount, setUnreadCount] = useState(0)
 
     return (<>
 
-        <Notifications isNotificationOpen={isNotificationOpen} setIsNotificationOpen={setIsNotificationOpen} darkmode={darkmode}/>
+        <Notifications isNotificationOpen={isNotificationOpen} setIsNotificationOpen={setIsNotificationOpen} darkmode={darkmode} onCountChange={setUnreadCount}/>
     
             <div className={`studio_content_header ${darkmode ? "header_dark" : ""}`}>            
                 
@@ -49,7 +50,7 @@ export default function Header({ isOpen, setIsOpen, darkmode, setDarkmode }) {
                 </div>
 
                 <div className="studio_content_header_section">
-                    <i class="fa-regular fa-bell bell" quantity="12" onClick={() => setIsNotificationOpen(true)}></i>
+                    <i className="fa-regular fa-bell bell" quantity={unreadCount || undefined} onClick={() => setIsNotificationOpen(true)}></i>
                 </div>
             </div>
         </div>

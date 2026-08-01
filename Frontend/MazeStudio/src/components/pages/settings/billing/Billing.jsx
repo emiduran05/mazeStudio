@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import StudioLayout from "../../../layouts/studioLayout/StudioLayout";
 import AsideConfig from "../asideConfig/AsideConfig";
 import { apiRequest } from "../../../../api/api"
+import ConnectPayouts from "./ConnectPayouts";
 
 export default function Billing() {
     const [darkmode, setDarkmode] = useState(
@@ -362,6 +363,7 @@ export default function Billing() {
                                         </p>
                                     </div>
                                 </section>
+                                <ConnectPayouts />
                             </div>
                         </div>
 

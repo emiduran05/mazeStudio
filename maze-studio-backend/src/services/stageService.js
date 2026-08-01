@@ -1,5 +1,6 @@
 const stageModel = require("../models/stageModel");
 const learningJourneyModel = require("../models/learningJourneyModel");
+const journeyAccess = require("./journeyAccessService");
 
 async function verifyJourneyOwnership(userId, journeyId) {
   const journey =
@@ -11,13 +12,7 @@ async function verifyJourneyOwnership(userId, journeyId) {
     throw error;
   }
 
-  if (journey.owner_user_id !== userId) {
-    const error = new Error(
-      "You do not have permission to modify this Learning Journey"
-    );
-    error.statusCode = 403;
-    throw error;
-  }
+  await journeyAccess.requireAccess(userId, journeyId, "EDIT");
 
   return journey;
 }
@@ -80,13 +75,7 @@ async function getStageForOwner(userId, stageId) {
     throw error;
   }
 
-  if (stage.owner_user_id !== userId) {
-    const error = new Error(
-      "You do not have permission to modify this Stage"
-    );
-    error.statusCode = 403;
-    throw error;
-  }
+  await journeyAccess.requireAccess(userId, stage.learning_journey_id, "EDIT");
 
   return stage;
 }

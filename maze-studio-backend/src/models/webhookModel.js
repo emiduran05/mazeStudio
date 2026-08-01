@@ -17,13 +17,13 @@ async function activateEducator({
 
     await client.query(
       `
-      UPDATE users
-      SET
-        status = 'ACTIVE',
+        UPDATE users
+        SET
+          role = 'EDUCATOR',
+          status = 'ACTIVE',
         stripe_customer_id = $1,
         updated_at = NOW()
-      WHERE id = $2
-        AND role = 'EDUCATOR'
+        WHERE id = $2
       `,
       [stripeCustomerId, userId]
     );
@@ -218,6 +218,7 @@ async function findUserIdBySubscriptionId(
 
   return result.rows[0]?.user_id || null;
 }
+async function updateOfferingSubscription(stripeSubscriptionId,status,cancelAtPeriodEnd,currentPeriodEnd){await pool.query("UPDATE offering_subscriptions SET status=$1,cancel_at_period_end=$2,current_period_end=$3,updated_at=NOW() WHERE stripe_subscription_id=$4",[String(status).toUpperCase(),cancelAtPeriodEnd,currentPeriodEnd,stripeSubscriptionId]);}
 
 module.exports = {
   activateEducator,
@@ -226,4 +227,5 @@ module.exports = {
   upsertPaymentMethod,
   findUserByStripeCustomerId,
   findUserIdBySubscriptionId,
+  updateOfferingSubscription,
 };

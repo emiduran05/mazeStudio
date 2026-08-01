@@ -1,0 +1,2 @@
+const service=require("../services/connectService");
+async function status(req,res,next){try{res.json({connect:await service.status(req.user.id)})}catch(e){next(e)}}async function onboarding(req,res,next){try{res.status(201).json(await service.onboarding(req.user.id))}catch(e){next(e)}}async function dashboard(req,res,next){try{res.json(await service.dashboard(req.user.id))}catch(e){next(e)}}module.exports={status,onboarding,dashboard};

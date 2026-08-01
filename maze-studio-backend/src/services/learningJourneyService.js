@@ -1,5 +1,6 @@
 const learningJourneyModel = require("../models/learningJourneyModel");
 const storageService = require("./storageService");
+const journeyAccess = require("./journeyAccessService");
 async function uploadJourneyCover(
   userId,
   journeyId,
@@ -9,6 +10,7 @@ async function uploadJourneyCover(
     userId,
     journeyId
   );
+  await journeyAccess.requireAccess(userId, journeyId, "EDIT");
 
   const uploaded = await storageService.uploadImage({
     file,
@@ -51,6 +53,7 @@ async function deleteJourneyCover(
     userId,
     journeyId
   );
+  await journeyAccess.requireAccess(userId, journeyId, "EDIT");
 
   const updated =
     await learningJourneyModel.removeJourneyCover(
@@ -180,11 +183,7 @@ async function getLearningJourney(userId, journeyId) {
     throw error;
   }
 
-  if (journey.owner_user_id !== userId) {
-    const error = new Error("You do not have access to this Learning Journey");
-    error.statusCode = 403;
-    throw error;
-  }
+  await journeyAccess.requireAccess(userId, journeyId, "VIEW");
 
   return journey;
 }
@@ -194,10 +193,8 @@ async function updateLearningJourney(
   journeyId,
   data = {}
 ) {
-  const journey = await getLearningJourney(
-    userId,
-    journeyId
-  );
+  const journey = await getLearningJourney(userId, journeyId);
+  await journeyAccess.requireAccess(userId, journeyId, "EDIT");
 
   const allowedVisualTypes = [
     "ICON",
@@ -253,7 +250,7 @@ async function updateLearningJourney(
 }
 
 async function archiveLearningJourney(userId, journeyId) {
-  await getLearningJourney(userId, journeyId);
+  await journeyAccess.requireAccess(userId, journeyId, "OWNER");
 
   const archived = await learningJourneyModel.archiveJourney(
     journeyId,
@@ -282,13 +279,8 @@ async function getLearningJourneyBuilder(userId, journeyId) {
     throw error;
   }
 
-  if (builder.journey.owner_user_id !== userId) {
-    const error = new Error(
-      "You do not have access to this Learning Journey"
-    );
-    error.statusCode = 403;
-    throw error;
-  }
+  const access = await journeyAccess.requireAccess(userId, journeyId, "VIEW");
+  builder.accessRole = access.access_role;
 
   return builder;
 }

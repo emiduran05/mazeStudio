@@ -1,16 +1,17 @@
 import { useNavigate } from "react-router-dom";
 
-export default function BuilderStep({ step }) {
+export default function BuilderStep({ step, onDelete }) {
     const navigate = useNavigate();
 
     return (
-        <button
-            type="button"
-            className="builder_step"
-            onClick={() =>
-                navigate(`/studio/step/${step.id}`)
-            }
-        >
+        <div className="builder_step_wrapper">
+          <button
+              type="button"
+              className="builder_step"
+              onClick={() =>
+                  navigate(`/studio/step/${step.id}`)
+              }
+          >
             <span
     className={`builder_step_icon ${
         step.visual_type === "IMAGE" && step.image_url
@@ -50,6 +51,16 @@ export default function BuilderStep({ step }) {
             </span>
 
             <i className="fa-solid fa-chevron-right"></i>
-        </button>
+          </button>
+          <button
+              type="button"
+              className="builder_step_delete"
+              onClick={() => onDelete(step)}
+              title="Delete Step"
+              aria-label={`Delete ${step.title}`}
+          >
+              <i className="fa-regular fa-trash-can" />
+          </button>
+        </div>
     );
 }

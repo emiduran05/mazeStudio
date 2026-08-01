@@ -6,6 +6,11 @@ export default function AsideConfig() {
     return (
         <>
             <div className="settings_main_container_grid_element_container">
+                <NavLink to="/my-settings/educator-profile"
+                    className={({ isActive }) => isActive ? "setting-link setting-active" : "setting-link"}>
+                    <i className="fa-solid fa-address-card"></i>
+                    <div className="setting-link-div"><span className="span_title">Public educator profile</span><span>Presentation, content and courses</span></div>
+                </NavLink>
                 <NavLink to="/my-settings/account"
                     className={({ isActive }) =>
                         isActive ? "setting-link setting-active" : "setting-link"

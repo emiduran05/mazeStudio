@@ -115,7 +115,15 @@
   padding: 16px;
   border-radius: 18px;
   transition: .25s;
+  width: 100%;
+  border: 0;
+  color: inherit;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
 }
+
+.notification_card.unread { background: #fafaff; }
 
 .notification_card:hover {
   background: #f8f8ff;

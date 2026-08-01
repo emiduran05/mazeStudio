@@ -39,8 +39,17 @@ async function createPortal(req, res, next) {
   }
 }
 
+async function createEducatorUpgrade(req,res,next) {
+  try {
+    res.status(201).json(
+      await billingService.createEducatorUpgradeCheckout(req.user.id)
+    );
+  } catch (error) { next(error); }
+}
+
 module.exports = {
   getCheckoutSession,
   getMyBilling,
-  createPortal
+  createPortal,
+  createEducatorUpgrade
 };

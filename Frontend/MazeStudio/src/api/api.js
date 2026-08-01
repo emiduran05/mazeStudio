@@ -1,22 +1,54 @@
 const API_URL = import.meta.env.VITE_API_URL;
 
-export async function apiRequest(path, options = {}) {
-  const token = localStorage.getItem("token");
+export async function apiRequest(endpoint, options = {}) {
+    const token =
+        localStorage.getItem("token") ||
+        sessionStorage.getItem("token");
 
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
+    const headers = {
+        ...(options.body instanceof FormData
+            ? {}
+            : { "Content-Type": "application/json" }),
+        ...(token
+            ? { Authorization: `Bearer ${token}` }
+            : {}),
+        ...options.headers,
+    };
 
-  const data = await res.json().catch(() => ({}));
+    const response = await fetch(`${API_URL}${endpoint}`, {
+        ...options,
+        headers,
+    });
 
-  if (!res.ok) {
-    throw new Error(data.message || "Request failed");
-  }
+    const responseText = await response.text();
 
-  return data;
+    let data = {};
+
+    try {
+        data = responseText
+            ? JSON.parse(responseText)
+            : {};
+    } catch {
+        data = {
+            message: responseText,
+        };
+    }
+
+    if (!response.ok) {
+        console.error("API request failed:", {
+            method: options.method || "GET",
+            url: `${API_URL}${endpoint}`,
+            status: response.status,
+            statusText: response.statusText,
+            response: data,
+        });
+
+        throw new Error(
+            data.message ||
+            data.error ||
+            `Request failed with status ${response.status}`
+        );
+    }
+
+    return data;
 }

@@ -57,11 +57,15 @@ RETURNING *
 async function findJourneysByOwner(ownerUserId) {
   const result = await pool.query(
     `
-    SELECT *
-    FROM learning_journeys
-    WHERE owner_user_id = $1
-      AND status <> 'ARCHIVED'
-    ORDER BY updated_at DESC
+    SELECT journey.*,
+      CASE WHEN journey.owner_user_id=$1 THEN 'OWNER' ELSE collaborator.role END AS access_role
+    FROM learning_journeys journey
+    LEFT JOIN learning_journey_collaborators collaborator
+      ON collaborator.learning_journey_id=journey.id
+     AND collaborator.user_id=$1 AND collaborator.status='ACTIVE'
+    WHERE (journey.owner_user_id=$1 OR collaborator.id IS NOT NULL)
+      AND journey.status <> 'ARCHIVED'
+    ORDER BY journey.updated_at DESC
     `,
     [ownerUserId]
   );
@@ -127,7 +131,6 @@ async function updateJourney(id, ownerUserId, data = {}) {
       updated_at = NOW()
 
     WHERE id = $14
-      AND owner_user_id = $15
       AND status <> 'ARCHIVED'
 
     RETURNING *
@@ -147,7 +150,6 @@ async function updateJourney(id, ownerUserId, data = {}) {
       icon,
       emoji,
       id,
-      ownerUserId,
     ]
   );
 
@@ -167,7 +169,7 @@ async function archiveJourney(id, ownerUserId) {
       AND status <> 'ARCHIVED'
     RETURNING id, status, archived_at
     `,
-    [id, ownerUserId]
+    [id]
   );
 
   return result.rows[0];
@@ -248,7 +250,6 @@ async function updateJourneyCover(
       cover_object_key = $2,
       updated_at = NOW()
     WHERE id = $3
-      AND owner_user_id = $4
       AND status <> 'ARCHIVED'
     RETURNING *
     `,
@@ -256,7 +257,6 @@ async function updateJourneyCover(
       coverUrl,
       coverObjectKey,
       journeyId,
-      ownerUserId,
     ]
   );
 
@@ -275,11 +275,10 @@ async function removeJourneyCover(
       cover_object_key = NULL,
       updated_at = NOW()
     WHERE id = $1
-      AND owner_user_id = $2
       AND status <> 'ARCHIVED'
     RETURNING *
     `,
-    [journeyId, ownerUserId]
+    [journeyId]
   );
 
   return result.rows[0];

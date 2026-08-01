@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import "./Login.css";
 
 export default function Login() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const { login } = useAuth();
     const [stayLogged, setStayLogged] = useState(false);
 
@@ -29,13 +30,37 @@ export default function Login() {
         setLoading(true);
 
         try {
-            const loggedUser = await login(form.email, form.password, stayLogged);
+            const loggedUser = await login(
+                form.email,
+                form.password,
+                stayLogged,
+                searchParams.get("invitation")
+            );
             if (loggedUser?.status === "PENDING_DELETION") {
                 navigate("/account-recovery", { replace: true });
                 return;
             }
 
-            navigate("/studio", { replace: true });
+            const returnTo = searchParams.get("returnTo");
+            const safeReturnTo = returnTo?.startsWith("/") && !returnTo.startsWith("//")
+                ? returnTo
+                : null;
+            const canAccessStudio =
+                loggedUser?.role === "EDUCATOR" &&
+                loggedUser?.status === "ACTIVE" &&
+                ["ACTIVE", "TRIALING"].includes(
+                    String(loggedUser?.subscription_status || "").toUpperCase()
+                );
+            navigate(
+                searchParams.get("profileLink")
+                    ? `/link-learner-profile?token=${encodeURIComponent(searchParams.get("profileLink"))}`
+                    : safeReturnTo
+                    ? safeReturnTo
+                    : canAccessStudio
+                    ? "/studio"
+                    : "/my-learning",
+                { replace: true }
+            );
         } catch (err) {
             setError(err.message || "Login failed");
         } finally {

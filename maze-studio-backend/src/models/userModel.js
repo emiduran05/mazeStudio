@@ -7,11 +7,14 @@ async function createUser({
   passwordHash,
   role,
   status = "ACTIVE",
-}) {
-  const client = await pool.connect();
+}, transactionClient = null) {
+  const client = transactionClient || await pool.connect();
+  const ownsTransaction = !transactionClient;
 
   try {
-    await client.query("BEGIN");
+    if (ownsTransaction) {
+      await client.query("BEGIN");
+    }
 
     const result = await client.query(
       `
@@ -55,14 +58,20 @@ async function createUser({
       [user.id]
     );
 
-    await client.query("COMMIT");
+    if (ownsTransaction) {
+      await client.query("COMMIT");
+    }
 
     return user;
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (ownsTransaction) {
+      await client.query("ROLLBACK");
+    }
     throw error;
   } finally {
-    client.release();
+    if (ownsTransaction) {
+      client.release();
+    }
   }
 }
 async function findUserByEmail(email) {
@@ -78,6 +87,12 @@ async function findUserByEmail(email) {
       status,
       stripe_customer_id,
       avatar_url,
+      (
+        SELECT s.status
+        FROM subscriptions s
+        WHERE s.user_id = users.id
+        LIMIT 1
+      ) AS subscription_status,
       created_at,
       updated_at
     FROM users
@@ -104,6 +119,12 @@ async function findUserById(
       u.avatar_url,
       u.avatar_object_key,
       u.status,
+      (
+        SELECT s.status
+        FROM subscriptions s
+        WHERE s.user_id = u.id
+        LIMIT 1
+      ) AS subscription_status,
       u.deleted_at,
       u.scheduled_deletion_at,
       u.created_at,

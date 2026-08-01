@@ -47,13 +47,13 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                                 <span>Studio</span>
                             </NavLink>
 
-                            <NavLink to="/learning-journeys"
+                            <NavLink to="/calendar"
                                 className={({ isActive }) =>
                                     isActive ? "link active" : "link"
                                 }>
-                                <i class="fa-solid fa-chalkboard-user"></i>
+                                <i className="fa-solid fa-calendar-days"></i>
 
-                                <span>Learning Journeys</span>
+                                <span>Calendar</span>
                             </NavLink>
 
                             <NavLink to="/insights"
@@ -65,6 +65,15 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                                 <span>Insights</span>
                             </NavLink>
 
+                            <NavLink to="/marketplace"
+                                className={({ isActive }) =>
+                                    isActive ? "link active" : "link"
+                                }>
+                                <i className="fa-solid fa-compass"></i>
+
+                                <span>Marketplace</span>
+                            </NavLink>
+
                             <NavLink to="/my-settings/account"
                                 className={({ isActive }) =>
                                     isActive ? "link active" : "link"
@@ -72,6 +81,15 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                                 <i class="fa-solid fa-gear"></i>
 
                                 <span>Settings</span>
+                            </NavLink>
+
+                            <NavLink to="/my-learning"
+                                className={({ isActive }) =>
+                                    isActive ? "link active" : "link"
+                                }>
+                                <i className="fa-solid fa-graduation-cap"></i>
+
+                                <span>Go to My Learning</span>
                             </NavLink>
 
 

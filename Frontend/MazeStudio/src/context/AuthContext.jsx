@@ -27,10 +27,10 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function login(email, password, stayLogged = false) {
+  async function login(email, password, stayLogged = false, invitationToken = null) {
   const data = await apiRequest("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password, stayLogged }),
+    body: JSON.stringify({ email, password, stayLogged, invitationToken }),
   });
 
   localStorage.setItem("token", data.token);
@@ -45,7 +45,8 @@ export function AuthProvider({ children }) {
   }
 
   useEffect(() => {
-    loadUser();
+    const timeoutId = window.setTimeout(loadUser, 0);
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   return (
@@ -55,6 +56,7 @@ export function AuthProvider({ children }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext);
 }

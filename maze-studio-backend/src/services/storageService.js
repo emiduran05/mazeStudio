@@ -1,6 +1,3 @@
-const { randomUUID } = require("crypto");
-const path = require("path");
-const bucket = require("../config/gcs");
 
 const allowedMimeTypes = new Set([
   "image/jpeg",
@@ -98,7 +95,73 @@ async function deleteImage(objectKey) {
   }
 }
 
+const { randomUUID } = require("crypto");
+const path = require("path");
+const bucket = require("../config/gcs");
+
+async function uploadFile({
+  file,
+  folder,
+  ownerId,
+}) {
+  if (!file) {
+    const error = new Error("File is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const originalExtension =
+    path.extname(file.originalname).toLowerCase();
+
+  const objectKey =
+    `${folder}/${ownerId}/` +
+    `${randomUUID()}-${Date.now()}${originalExtension}`;
+
+  const cloudFile = bucket.file(objectKey);
+
+  await cloudFile.save(file.buffer, {
+    resumable: false,
+    metadata: {
+      contentType: file.mimetype,
+      cacheControl: "public, max-age=31536000",
+      metadata: {
+        originalName: file.originalname,
+      },
+    },
+  });
+
+  const publicUrl =
+    `https://storage.googleapis.com/` +
+    `${bucket.name}/${encodeURI(objectKey)}`;
+
+  return {
+    objectKey,
+    publicUrl,
+    originalName: file.originalname,
+    mimeType: file.mimetype,
+    size: file.size,
+  };
+}
+
+async function deleteFile(objectKey) {
+  if (!objectKey) return;
+
+  try {
+    await bucket.file(objectKey).delete({
+      ignoreNotFound: true,
+    });
+  } catch (error) {
+    console.error(
+      `Could not delete GCS object ${objectKey}:`,
+      error.message
+    );
+  }
+}
+
+
 module.exports = {
   uploadImage,
+  uploadFile,
+  deleteFile,
   deleteImage,
 };

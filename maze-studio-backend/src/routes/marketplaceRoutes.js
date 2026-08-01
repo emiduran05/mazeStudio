@@ -1,0 +1,14 @@
+const express=require("express");
+const auth=require("../middlewares/authMiddleware");
+const controller=require("../controllers/marketplaceController");
+const router=express.Router();
+router.get("/marketplace/offerings",controller.catalog);
+router.get("/marketplace/journeys/:journeyId",controller.detail);
+router.get("/marketplace/journeys/:journeyId/preview/steps/:stepId",controller.previewStep);
+router.post("/marketplace/offerings/:offeringId/enroll",auth,controller.enroll);
+router.get("/marketplace/offerings/:offeringId/availability",controller.availability);
+router.post("/marketplace/checkout/confirm",auth,controller.confirm);
+router.get("/me/offering-subscriptions",auth,controller.subscriptions);
+router.get("/me/offering-orders",auth,controller.orders);
+router.post("/me/offering-subscriptions/:subscriptionId/cancel",auth,controller.cancelSubscription);
+module.exports=router;

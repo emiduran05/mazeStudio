@@ -1,6 +1,7 @@
 const stepModel = require("../models/stepModel");
 const stageModel = require("../models/stageModel");
 const storageService = require("./storageService");
+const journeyAccess = require("./journeyAccessService");
 
 
 const allowedStatuses = [
@@ -135,13 +136,7 @@ async function getStageForOwner(userId, stageId) {
     throw error;
   }
 
-  if (stage.owner_user_id !== userId) {
-    const error = new Error(
-      "You do not have permission to modify this Stage"
-    );
-    error.statusCode = 403;
-    throw error;
-  }
+  await journeyAccess.requireAccess(userId, stage.learning_journey_id, "EDIT");
 
   if (stage.journey_status === "ARCHIVED") {
     const error = new Error(
@@ -231,13 +226,7 @@ async function getStepForOwner(userId, stepId) {
     throw error;
   }
 
-  if (step.owner_user_id !== userId) {
-    const error = new Error(
-      "You do not have permission to modify this Step"
-    );
-    error.statusCode = 403;
-    throw error;
-  }
+  await journeyAccess.requireAccess(userId, step.learning_journey_id, "EDIT");
 
   return step;
 }

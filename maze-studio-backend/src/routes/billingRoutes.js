@@ -21,5 +21,10 @@ router.post(
     authMiddleware,
     billingController.createPortal
 );
+router.post(
+  "/educator-upgrade",
+  authMiddleware,
+  billingController.createEducatorUpgrade
+);
 
 module.exports = router;
