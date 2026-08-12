@@ -1,0 +1,7 @@
+.incident_report_modal header p{margin:4px 0 0;color:#667085;font-size:.75rem}
+.incident_report_notice{display:flex;align-items:flex-start;gap:12px;padding:13px;border:1px solid #b2ddff;border-radius:12px;background:#eff8ff;color:#175cd3}
+.incident_report_notice>i{margin-top:3px}
+.incident_report_notice span{display:grid;gap:3px}
+.incident_report_notice small{color:#475467;font-weight:500}
+.student_dark .incident_report_notice,.dark_studio .incident_report_notice{border-color:#1849a9;background:#102a56;color:#b2ddff}
+.student_dark .incident_report_notice small,.dark_studio .incident_report_notice small{color:#d0d5dd}

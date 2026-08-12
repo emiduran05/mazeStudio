@@ -132,6 +132,9 @@ async function createLayout(req, res, next) {
     next(error);
   }
 }
+async function uploadInlineImage(req,res,next){try{res.json({asset:await blockService.uploadInlineImage(req.user.id,req.params.blockId,req.file)});}catch(error){next(error)}}
+async function uploadCanvasAsset(req,res,next){try{res.json({asset:await blockService.uploadCanvasAsset(req.user.id,req.params.blockId,req.file)});}catch(error){next(error)}}
+async function checkPresentationExercise(req,res,next){try{res.json(await blockService.checkPresentationExercise(req.user.id,req.params.blockId,req.body.answer))}catch(error){next(error)}}
 module.exports = {
     create,
     getByStep,
@@ -139,6 +142,9 @@ module.exports = {
     remove,
     reorder,
     uploadAsset,
+    uploadInlineImage,
+    uploadCanvasAsset,
     removeAsset,
     createLayout,
+    checkPresentationExercise,
 };

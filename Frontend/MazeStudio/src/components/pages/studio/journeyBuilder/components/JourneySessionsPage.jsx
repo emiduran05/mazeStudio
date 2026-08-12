@@ -29,7 +29,7 @@ export default function JourneySessionsPage({ journeyId }) {
         setError("");
         apiRequest(`/learning-journeys/${journeyId}/offerings`).then(async (data) => {
             const eligible = (data.offerings || []).filter((item) =>
-                ["COHORT", "HYBRID"].includes(item.offering_type));
+                ["COHORT", "HYBRID", "WEBINAR"].includes(item.offering_type));
             const nested = await Promise.all(eligible.map(async (offering) => {
                 const result = await apiRequest(`/offerings/${offering.id}/cohorts`);
                 return (result.cohorts || []).map((cohort) => ({
@@ -84,7 +84,6 @@ export default function JourneySessionsPage({ journeyId }) {
                 scope: editing.scope,
                 startsAt: new Date(editing.startsAt).toISOString(),
                 status: editing.status,
-                meetingUrl: editing.meetingUrl,
             }),
         });
         setEditing(null);
@@ -126,7 +125,7 @@ export default function JourneySessionsPage({ journeyId }) {
                 <label>Number of sessions<input type="number" min="1" max="104" value={form.occurrenceCount} onChange={(e) => setForm({...form, occurrenceCount:e.target.value})} /></label>
                 <label>Duration (minutes)<input type="number" min="15" value={form.durationMinutes} onChange={(e) => setForm({...form, durationMinutes:e.target.value})} /></label>
             </div>
-            <label>Meeting link<input type="url" value={form.meetingUrl} onChange={(e) => setForm({...form, meetingUrl:e.target.value})} /></label>
+            <div className="maze_classroom_notice"><i className="fa-solid fa-video"/><span><strong>Hosted in Maze Studio</strong><small>Every session receives a secure Maze Classroom automatically.</small></span></div>
             <footer><button type="button" onClick={() => setCreateOpen(false)}>Cancel</button><button type="submit">Generate sessions</button></footer>
         </form></div>}
 
@@ -143,7 +142,6 @@ export default function JourneySessionsPage({ journeyId }) {
             <header><div><span>Update schedule</span><h2>Manage session {editing.event.occurrence_index}</h2></div><button type="button" onClick={() => setEditing(null)}><i className="fa-solid fa-xmark" /></button></header>
             <label>Apply change to<select value={editing.scope} onChange={(e) => setEditing({...editing,scope:e.target.value})}><option value="SINGLE">This session only</option><option value="FUTURE">This and future sessions</option><option value="SERIES">Entire series</option></select></label>
             <label>New date and time<input type="datetime-local" value={editing.startsAt} onChange={(e) => setEditing({...editing,startsAt:e.target.value})} /></label>
-            <label>Meeting link<input type="url" value={editing.meetingUrl} onChange={(e) => setEditing({...editing,meetingUrl:e.target.value})} /></label>
             <label>Status<select value={editing.status} onChange={(e) => setEditing({...editing,status:e.target.value})}><option value="SCHEDULED">Scheduled</option><option value="CANCELLED">Cancelled</option><option value="COMPLETED">Completed</option></select></label>
             <footer><button type="button" onClick={() => setEditing(null)}>Close</button><button type="submit">Save changes</button></footer>
         </form></div>}

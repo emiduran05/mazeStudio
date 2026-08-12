@@ -33,15 +33,16 @@ export default function StudentHeader({
                     <i className="fa-solid fa-bars" />
                 </button>
 
-                <div className="student_global_search">
+                <form className="student_global_search" onSubmit={event=>{event.preventDefault();const query=new FormData(event.currentTarget).get("search");navigate(`/marketplace${query?`?search=${encodeURIComponent(query)}`:""}`)}}>
                     <i className="fa-solid fa-magnifying-glass" />
                     <input
+                        name="search"
                         type="search"
                         placeholder="Search your Learning Journeys"
                         aria-label="Search your Learning Journeys"
                     />
                     <kbd>Ctrl K</kbd>
-                </div>
+                </form>
             </div>
 
             <div className="student_header_actions">

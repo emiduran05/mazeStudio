@@ -9,8 +9,7 @@ import JourneyWorkspaceNav from "./components/JourneyWorkspaceNav";
 import JourneyLearningPaths from "./components/JourneyLearningPaths";
 import JourneyCollaborators from "./components/JourneyCollaborators";
 import JourneyOfferings from "./components/JourneyOfferings";
-import JourneyCohortsPage from "./components/JourneyCohortsPage";
-import JourneySessionsPage from "./components/JourneySessionsPage";
+import JourneyAIArchitect from "./components/JourneyAIArchitect";
 
 export default function JourneyBuilder() {
     const { journeyId } = useParams();
@@ -23,11 +22,13 @@ export default function JourneyBuilder() {
     const [stages, setStages] = useState([]);
     const [steps, setSteps] = useState([]);
     const requestedSection = searchParams.get("section")?.toUpperCase();
-    const activeSection = ["STUDENTS", "PATHS", "OFFERS", "COHORTS", "SESSIONS", "COLLABORATORS"].includes(requestedSection)
+    const activeSection = ["STUDENTS", "PATHS", "OFFERS", "COLLABORATORS"].includes(requestedSection)
         ? requestedSection
+        : ["COHORTS","SESSIONS"].includes(requestedSection) ? "OFFERS"
         : "CONTENT";
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [aiArchitectOpen,setAiArchitectOpen]=useState(false);
 
     async function handleReorderStages({
     parentStageId,
@@ -376,6 +377,7 @@ return (
 
                 {activeSection === "CONTENT" && (
                     <div className="journey_builder_header_actions">
+                        <button type="button" className="builder_ai_button" onClick={()=>setAiArchitectOpen(true)}><i className="fa-solid fa-wand-magic-sparkles"/> AI Architect</button>
                         <button
                             type="button"
                             className="builder_secondary_button"
@@ -416,6 +418,7 @@ return (
                 )}
             </header>
 
+            {aiArchitectOpen&&<JourneyAIArchitect journeyId={journeyId} onClose={()=>setAiArchitectOpen(false)} onApplied={result=>{setStages(current=>[...current,...(result.stages||[])]);setSteps(current=>[...current,...(result.steps||[])])}}/>}
             {activeSection === "CONTENT" ? (
                 <section className="journey_builder_workspace">
                     <div className="journey_builder_toolbar">
@@ -518,10 +521,6 @@ return (
                 <JourneyLearningPaths journeyId={journeyId} />
             ) : activeSection === "OFFERS" ? (
                 <JourneyOfferings journeyId={journeyId} />
-            ) : activeSection === "COHORTS" ? (
-                <JourneyCohortsPage journeyId={journeyId} />
-            ) : activeSection === "SESSIONS" ? (
-                <JourneySessionsPage journeyId={journeyId} />
             ) : (
                 <JourneyCollaborators journeyId={journeyId} />
             )}

@@ -259,7 +259,7 @@ async function recordStepProgress(userId, enrollmentId, stepId, status) {
   if (!step.rows[0]) throw httpError("Step does not belong to this Journey", 400);
   if (status === "NOT_STARTED") {
     await pool.query(
-      "DELETE FROM step_progress WHERE enrollment_id=$1 AND step_id=$2",
+      "DELETE FROM step_progress WHERE enrollment_id=$1::uuid AND step_id=$2::uuid",
       [enrollmentId, stepId]
     );
     return { stepId, status };
@@ -267,16 +267,95 @@ async function recordStepProgress(userId, enrollmentId, stepId, status) {
   const result = await pool.query(
     `INSERT INTO step_progress
      (enrollment_id,step_id,status,progress_percentage,started_at,completed_at,last_accessed_at)
-     VALUES($1,$2,$3,$4,NOW(),CASE WHEN $3='COMPLETED' THEN NOW() END,NOW())
+     VALUES($1::uuid,$2::uuid,$3::varchar,$4::integer,NOW(),CASE WHEN $3::varchar='COMPLETED' THEN NOW() ELSE NULL END,NOW())
      ON CONFLICT(enrollment_id,step_id) DO UPDATE SET
-       status=$3,progress_percentage=$4,
+       status=$3::varchar,progress_percentage=$4::integer,
        started_at=COALESCE(step_progress.started_at,NOW()),
-       completed_at=CASE WHEN $3='COMPLETED' THEN COALESCE(step_progress.completed_at,NOW()) ELSE NULL END,
+       completed_at=CASE WHEN $3::varchar='COMPLETED' THEN COALESCE(step_progress.completed_at,NOW()) ELSE NULL END,
        last_accessed_at=NOW()
      RETURNING *`,
     [enrollmentId, stepId, status, status === "COMPLETED" ? 100 : 0]
   );
   return result.rows[0];
+}
+
+async function getEnrollmentStep(userId,enrollmentId,stepId){
+  const enrollment=await assertEnrollmentOwner(userId,enrollmentId);
+  const step=(await pool.query(`SELECT step.*,stage.title stage_title,stage.position stage_position FROM steps step JOIN stages stage ON stage.id=step.stage_id WHERE step.id=$1::uuid AND stage.learning_journey_id=$2::uuid AND step.status<>'ARCHIVED'`,[stepId,enrollment.learning_journey_id])).rows[0];
+  if(!step)throw httpError("Step does not belong to this Learning Journey",404);
+  const blocks=(await pool.query("SELECT * FROM step_blocks WHERE step_id=$1::uuid ORDER BY position,created_at",[stepId])).rows;
+  const progress=(await pool.query("SELECT * FROM step_progress WHERE enrollment_id=$1::uuid AND step_id=$2::uuid",[enrollmentId,stepId])).rows[0]||null;
+  return{enrollment,step:{...step,stageTitle:step.stage_title,content:{blocks}},progress};
+}
+
+async function validateTeachingMarker(enrollment, stepId, blockId) {
+  if (!stepId && blockId) throw httpError("Select a Step before selecting a Block", 400);
+  if (!stepId) return;
+  const result = await pool.query(
+    `SELECT step.id,EXISTS(
+       SELECT 1 FROM step_blocks block WHERE block.id=$3::uuid AND block.step_id=step.id
+     ) block_matches
+     FROM steps step JOIN stages stage ON stage.id=step.stage_id
+     WHERE step.id=$1::uuid AND stage.learning_journey_id=$2::uuid AND step.status<>'ARCHIVED'`,
+    [stepId, enrollment.learning_journey_id, blockId || null]
+  );
+  if (!result.rows[0]) throw httpError("Step does not belong to this Learning Journey", 400);
+  if (blockId && !result.rows[0].block_matches) throw httpError("Block does not belong to the selected Step", 400);
+}
+
+async function getTeachingMemory(userId, enrollmentId) {
+  const enrollment = await assertEnrollmentOwner(userId, enrollmentId);
+  const [memory, steps, history] = await Promise.all([
+    pool.query("SELECT * FROM enrollment_teaching_memory WHERE enrollment_id=$1", [enrollmentId]),
+    pool.query(`SELECT step.id,step.title,stage.title stage_title,stage.position stage_position,step.position,
+      COALESCE(jsonb_agg(jsonb_build_object('id',block.id,'type',block.block_type,'label',COALESCE(NULLIF(block.content->>'text',''),NULLIF(block.content->>'question',''),NULLIF(block.content->>'title',''),INITCAP(LOWER(REPLACE(block.block_type,'_',' '))))) ORDER BY block.position) FILTER(WHERE block.id IS NOT NULL),'[]') blocks
+      FROM steps step JOIN stages stage ON stage.id=step.stage_id
+      LEFT JOIN step_blocks block ON block.step_id=step.id
+      WHERE stage.learning_journey_id=$1 AND step.status<>'ARCHIVED'
+      GROUP BY step.id,stage.id ORDER BY stage.position,step.position`, [enrollment.learning_journey_id]),
+    pool.query(`SELECT note.*,step.title step_title FROM teaching_session_notes note
+      LEFT JOIN steps step ON step.id=note.step_id WHERE note.enrollment_id=$1
+      ORDER BY note.occurred_at DESC LIMIT 20`, [enrollmentId]),
+  ]);
+  return { enrollment, memory: memory.rows[0] || null, steps: steps.rows, history: history.rows };
+}
+
+async function saveTeachingMemory(userId, enrollmentId, input = {}) {
+  const enrollment = await assertEnrollmentOwner(userId, enrollmentId);
+  const stepId = input.currentStepId || null, blockId = input.currentBlockId || null;
+  await validateTeachingMarker(enrollment, stepId, blockId);
+  const allowed = new Set(["IN_PROGRESS","NEEDS_REVIEW","READY_TO_ADVANCE","PAUSED"]);
+  const status = allowed.has(input.learningStatus) ? input.learningStatus : "IN_PROGRESS";
+  const result = await pool.query(`INSERT INTO enrollment_teaching_memory
+    (enrollment_id,current_step_id,current_block_id,learning_status,strengths,needs_review,homework,next_topic,private_note,updated_by_user_id)
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+    ON CONFLICT(enrollment_id) DO UPDATE SET current_step_id=$2,current_block_id=$3,learning_status=$4,
+      strengths=$5,needs_review=$6,homework=$7,next_topic=$8,private_note=$9,updated_by_user_id=$10,updated_at=NOW()
+    RETURNING *`, [enrollmentId,stepId,blockId,status,input.strengths||null,input.needsReview||null,input.homework||null,input.nextTopic||null,input.privateNote||null,userId]);
+  return { memory: result.rows[0] };
+}
+
+async function closeTeachingSession(userId, enrollmentId, input = {}) {
+  const enrollment = await assertEnrollmentOwner(userId, enrollmentId);
+  const stepId = input.currentStepId || null, blockId = input.currentBlockId || null;
+  await validateTeachingMarker(enrollment, stepId, blockId);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const note = await client.query(`INSERT INTO teaching_session_notes
+      (enrollment_id,calendar_event_id,step_id,block_id,summary,strengths,needs_review,homework,next_topic,created_by_user_id,occurred_at)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,COALESCE($11::timestamptz,NOW())) RETURNING *`,
+      [enrollmentId,input.calendarEventId||null,stepId,blockId,input.summary||null,input.strengths||null,input.needsReview||null,input.homework||null,input.nextTopic||null,userId,input.occurredAt||null]);
+    await client.query(`INSERT INTO enrollment_teaching_memory
+      (enrollment_id,current_step_id,current_block_id,learning_status,strengths,needs_review,homework,next_topic,private_note,updated_by_user_id)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      ON CONFLICT(enrollment_id) DO UPDATE SET current_step_id=$2,current_block_id=$3,learning_status=$4,
+      strengths=$5,needs_review=$6,homework=$7,next_topic=$8,private_note=$9,updated_by_user_id=$10,updated_at=NOW()`,
+      [enrollmentId,stepId,blockId,input.learningStatus||"IN_PROGRESS",input.strengths||null,input.needsReview||null,input.homework||null,input.nextTopic||null,input.privateNote||null,userId]);
+    await client.query("COMMIT");
+    return { note: note.rows[0], saved: true };
+  } catch (error) { await client.query("ROLLBACK"); throw error; }
+  finally { client.release(); }
 }
 
 module.exports = {
@@ -287,5 +366,9 @@ module.exports = {
   acceptLinkInvitation,
   getEnrollmentProgress,
   recordStepProgress,
+  getEnrollmentStep,
   cancelLinkInvitation,
+  getTeachingMemory,
+  saveTeachingMemory,
+  closeTeachingSession,
 };

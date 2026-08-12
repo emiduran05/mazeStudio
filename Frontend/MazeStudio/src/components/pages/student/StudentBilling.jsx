@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { apiRequest } from "../../../api/api";
 import "./StudentBilling.css";
+import "./StudentBillingEnhancements.css";
 
 const money = (amount = 0, currency = "USD") =>
     new Intl.NumberFormat(undefined, { style: "currency", currency }).format(Number(amount) / 100);
@@ -119,7 +120,8 @@ export default function StudentBilling() {
             </main>
 
             <aside className="student_billing_side">
-                <section className="student_billing_card stripe_card"><i className="fa-brands fa-stripe" /><h2>Payment method</h2>{billing?.paymentMethod ? <p>{billing.paymentMethod.brand} ending in <strong>{billing.paymentMethod.last4}</strong></p> : <p>Your card information is securely stored by Stripe after your first purchase.</p>}<button onClick={openPortal} disabled={busy === "portal" || (!orders.length && !subscriptions.length)}>{busy === "portal" ? "Opening…" : "Manage with Stripe"}</button></section>
+                <section className="student_billing_card stripe_card"><i className="fa-brands fa-stripe" /><h2>Payment methods</h2>{billing?.paymentMethods?.length?<div className="student_payment_methods">{billing.paymentMethods.map(method=><p key={method.id}><i className="fa-regular fa-credit-card"/><span><strong>{method.brand?.toUpperCase()} ···· {method.last4}</strong><small>Expires {method.expMonth}/{method.expYear}{method.isDefault?" · Default":""}</small></span></p>)}</div>:billing?.paymentMethod?<p>{billing.paymentMethod.brand} ending in <strong>{billing.paymentMethod.last4}</strong></p>:<p>Your card information is securely stored by Stripe after your first purchase.</p>}<button onClick={openPortal} disabled={busy === "portal" || (!orders.length && !subscriptions.length)}>{busy === "portal" ? "Opening…" : "Manage with Stripe"}</button></section>
+                {billing?.paymentHistory?.length>0&&<section className="student_billing_card"><header><div><span className="student_section_kicker">Stripe history</span><h2>Receipts</h2></div></header><div className="student_billing_list compact">{billing.paymentHistory.map(item=><article key={item.id}><div className="student_billing_item_icon"><i className="fa-solid fa-file-invoice-dollar"/></div><div><strong>{money(item.amount,item.currency)}</strong><small>{new Date(item.createdAt).toLocaleDateString(undefined,{dateStyle:"medium"})} · {statusLabel(item.status)}</small></div>{item.receiptUrl&&<a href={item.receiptUrl} target="_blank" rel="noreferrer">Receipt</a>}</article>)}</div></section>}
                 <section className="student_billing_card policy_card"><i className="fa-solid fa-shield-heart" /><h3>Refund protection</h3><p>You can request a refund before attending your first class. The educator reviews the request and future sessions are cancelled when approved.</p></section>
                 <Link to="/student/settings" className="student_billing_back"><i className="fa-solid fa-arrow-left" /> Back to settings</Link>
             </aside>

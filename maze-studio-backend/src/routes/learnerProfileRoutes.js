@@ -12,5 +12,9 @@ router.get("/learner-profile-link", controller.invitation);
 router.post("/learner-profile-link/accept", auth, controller.accept);
 router.get("/enrollments/:enrollmentId/managed-progress", auth, educatorOnly, controller.progress);
 router.put("/enrollments/:enrollmentId/managed-progress/:stepId", auth, educatorOnly, controller.recordProgress);
+router.get("/enrollments/:enrollmentId/steps/:stepId",auth,educatorOnly,controller.enrollmentStep);
+router.get("/enrollments/:enrollmentId/teaching-memory", auth, educatorOnly, controller.memory);
+router.put("/enrollments/:enrollmentId/teaching-memory", auth, educatorOnly, controller.saveMemory);
+router.post("/enrollments/:enrollmentId/session-notes", auth, educatorOnly, controller.closeSession);
 
 module.exports = router;

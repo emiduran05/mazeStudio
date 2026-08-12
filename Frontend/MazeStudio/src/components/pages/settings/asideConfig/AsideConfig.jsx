@@ -35,7 +35,7 @@ export default function AsideConfig() {
 
                 </NavLink>
 
-                <NavLink to="/my-settings/notifications"
+                <NavLink to="/student/notifications"
                     className={({ isActive }) =>
                         isActive ? "setting-link setting-active" : "setting-link"
                     }>
@@ -47,30 +47,6 @@ export default function AsideConfig() {
 
                 </NavLink>
 
-
-                <NavLink to="/my-settings/appearance"
-                    className={({ isActive }) =>
-                        isActive ? "setting-link setting-active" : "setting-link"
-                    }>
-                    <i class="fa-solid fa-paintbrush"></i>
-                    <div className="setting-link-div">
-                        <span className="span_title">Appearance</span>
-                        <span>Theme preferences</span>
-                    </div>
-
-                </NavLink>
-
-                <NavLink to="/my-settings/lang"
-                    className={({ isActive }) =>
-                        isActive ? "setting-link setting-active" : "setting-link"
-                    }>
-                    <i class="fa-solid fa-earth-americas"></i>
-                    <div className="setting-link-div">
-                        <span className="span_title">Language & Region</span>
-                        <span>Language and Timezone</span>
-                    </div>
-
-                </NavLink>
 
                 <NavLink to="/my-settings/billing"
                     className={({ isActive }) =>
@@ -85,29 +61,6 @@ export default function AsideConfig() {
                 </NavLink>
 
 
-                <NavLink to="/my-settings/integrations"
-                    className={({ isActive }) =>
-                        isActive ? "setting-link setting-active" : "setting-link"
-                    }>
-                    <i class="fa-solid fa-screwdriver-wrench"></i>
-                    <div className="setting-link-div">
-                        <span className="span_title">Integrations</span>
-                        <span>Connected apps and services</span>
-                    </div>
-
-                </NavLink>
-
-                <NavLink to="/my-settings/privacy"
-                    className={({ isActive }) =>
-                        isActive ? "setting-link setting-active" : "setting-link"
-                    }>
-                    <i class="fa-solid fa-lock"></i>
-                    <div className="setting-link-div">
-                        <span className="span_title">Privacy</span>
-                        <span>Privacy and data settings</span>
-                    </div>
-
-                </NavLink>
             </div>
         </>
     )

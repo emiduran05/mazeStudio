@@ -1,0 +1,17 @@
+BEGIN;
+ALTER TABLE offerings ADD COLUMN IF NOT EXISTS payment_model VARCHAR(20) NOT NULL DEFAULT 'ONE_TIME';
+ALTER TABLE offerings DROP CONSTRAINT IF EXISTS offerings_payment_model_check;
+ALTER TABLE offerings ADD CONSTRAINT offerings_payment_model_check CHECK(payment_model IN ('ONE_TIME','MONTHLY','PER_SESSION','FLEXIBLE'));
+ALTER TABLE offerings ADD COLUMN IF NOT EXISTS access_policy VARCHAR(25) NOT NULL DEFAULT 'LIFETIME';
+ALTER TABLE offerings DROP CONSTRAINT IF EXISTS offerings_access_policy_check;
+ALTER TABLE offerings ADD CONSTRAINT offerings_access_policy_check CHECK(access_policy IN ('LIFETIME','WHILE_ACTIVE','FIXED_DAYS'));
+UPDATE offerings SET payment_model='FLEXIBLE' WHERE offering_type='ONE_TO_ONE' AND payment_model='ONE_TIME';
+UPDATE offerings SET access_policy='FIXED_DAYS' WHERE access_duration_days IS NOT NULL AND access_policy='LIFETIME';
+ALTER TABLE offering_orders DROP CONSTRAINT IF EXISTS offering_orders_billing_type_check;
+ALTER TABLE offering_orders ADD CONSTRAINT offering_orders_billing_type_check CHECK(billing_type IN ('ONE_TIME','MONTHLY','PER_SESSION'));
+ALTER TABLE journey_enrollments ADD COLUMN IF NOT EXISTS source_order_id UUID REFERENCES offering_orders(id) ON DELETE SET NULL;
+ALTER TABLE journey_enrollments ADD COLUMN IF NOT EXISTS access_policy VARCHAR(25) NOT NULL DEFAULT 'LIFETIME';
+ALTER TABLE journey_enrollments DROP CONSTRAINT IF EXISTS journey_enrollments_access_policy_check;
+ALTER TABLE journey_enrollments ADD CONSTRAINT journey_enrollments_access_policy_check CHECK(access_policy IN ('LIFETIME','WHILE_ACTIVE','FIXED_DAYS'));
+ALTER TABLE journey_enrollments ADD COLUMN IF NOT EXISTS access_expires_at TIMESTAMPTZ;
+COMMIT;

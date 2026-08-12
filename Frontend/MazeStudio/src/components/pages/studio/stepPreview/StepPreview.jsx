@@ -3,6 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import StudioLayout from "../../../layouts/studioLayout/StudioLayout";
 import { apiRequest } from "../../../../api/api";
 import "./StepPreview.css";
+import WhiteboardBlock from "../../../contentRenderer/WhiteboardBlock";
+import EquationBlock from "../../../contentRenderer/EquationBlock";
+import ContentRenderer from "../../../contentRenderer/ContentRenderer";
+import RichTextContent from "../../../contentRenderer/RichTextContent";
 
 export default function StepPreview() {
     const { stepId } = useParams();
@@ -11,6 +15,7 @@ export default function StepPreview() {
     const [step, setStep] = useState(null);
     const [blocks, setBlocks] = useState([]);
     const [challenges, setChallenges] = useState([]);
+    const [journeySteps, setJourneySteps] = useState([]);
     const [answers, setAnswers] = useState({});
     const [revealed, setRevealed] = useState({});
     const [loading, setLoading] = useState(true);
@@ -33,6 +38,10 @@ export default function StepPreview() {
                     `/learning-journeys/${stepData.step.learning_journey_id}/challenges`
                 );
                 setChallenges(challengeData.challenges || []);
+                const builderData = await apiRequest(
+                    `/learning-journeys/${stepData.step.learning_journey_id}/builder`
+                );
+                setJourneySteps(orderJourneySteps(builderData.stages || [], builderData.steps || []));
             } catch (err) {
                 setError(
                     err.message || "Could not load the Step preview."
@@ -45,6 +54,12 @@ export default function StepPreview() {
         loadPreview();
     }, [stepId]);
 
+    const currentStepIndex = journeySteps.findIndex((item) => item.id === stepId);
+    const previousStep = currentStepIndex > 0 ? journeySteps[currentStepIndex - 1] : null;
+    const nextStep = currentStepIndex >= 0 && currentStepIndex < journeySteps.length - 1
+        ? journeySteps[currentStepIndex + 1]
+        : null;
+
     const rootBlocks = useMemo(
         () =>
             blocks
@@ -56,6 +71,7 @@ export default function StepPreview() {
                 .sort((a, b) => a.position - b.position),
         [blocks]
     );
+    const visibleRootBlocks=rootBlocks.filter(block=>block.block_type!=="IMAGE"||Boolean(block.content?.url||block.content?.imageUrl||block.content?.image_url));
 
     function getChildren(parentBlockId) {
         return blocks
@@ -98,16 +114,8 @@ export default function StepPreview() {
         const content =
             block.content?.text ?? block.content?.html ?? "";
 
-        return (
-            <div className="preview_text_block">
-                {content
-                    .split("\n")
-                    .filter((paragraph) => paragraph.trim())
-                    .map((paragraph, index) => (
-                        <p key={`${block.id}-${index}`}>{paragraph}</p>
-                    ))}
-            </div>
-        );
+        const settings=block.settings||{};
+        return <RichTextContent content={{...block.content,text:content}} style={{fontSize:`${Math.min(72,Math.max(10,Number(settings.fontSize)||16))}px`,color:settings.color||undefined,backgroundColor:settings.backgroundColor||undefined,fontFamily:settings.fontFamily||undefined,fontWeight:settings.fontWeight||undefined,textAlign:settings.textAlign||undefined,lineHeight:settings.lineHeight||undefined,letterSpacing:`${Number(settings.letterSpacing)||0}px`,maxWidth:settings.maxWidth||undefined,marginInline:settings.maxWidth&&settings.maxWidth!=="100%"?"auto":undefined}}/>;
     }
 
     function renderVideo(block) {
@@ -150,7 +158,7 @@ export default function StepPreview() {
             "";
 
         if (!url) {
-            return missingContent("fa-image", "No image has been added.", true);
+            return null;
         }
 
         return (
@@ -166,6 +174,7 @@ export default function StepPreview() {
                 {block.content?.caption && (
                     <figcaption>{block.content.caption}</figcaption>
                 )}
+                {block.content?.sourceUrl&&<a className="learner_image_source" href={block.content.sourceUrl} target="_blank" rel="noreferrer">Image source <i className="fa-solid fa-arrow-up-right-from-square"/></a>}
             </figure>
         );
     }
@@ -247,6 +256,7 @@ export default function StepPreview() {
                                         <CellTag
                                             key={`${block.id}-${rowIndex}-${columnIndex}`}
                                         >
+                                            {cell.imageUrl&&<img className="learner_table_cell_image" src={cell.imageUrl} alt={cell.alt||""}/>} 
                                             {cell.value || "—"}
                                         </CellTag>
                                     );
@@ -376,11 +386,13 @@ export default function StepPreview() {
         const values = Array.isArray(answers[block.id])
             ? answers[block.id]
             : [];
+        const wordBank = Array.isArray(block.content?.wordBank) ? block.content.wordBank.filter(Boolean) : [];
         let blankIndex = -1;
 
         return (
             <div className="preview_exercise_block">
                 <ExerciseHeader block={block} label="Fill in the blanks" />
+                {wordBank.length > 0 && <div className="learner_word_bank" aria-label="Word bank">{wordBank.map((option,index)=><button type="button" key={`${option}-${index}`} onClick={()=>{const next=[...values];const count=(template.match(/\{\{blank\}\}/g)||[]).length;const emptyIndex=Array.from({length:count}).findIndex((_,answerIndex)=>!next[answerIndex]);if(emptyIndex>=0){next[emptyIndex]=option;setBlockAnswer(block.id,next)}}}>{option}</button>)}</div>}
                 <div className="preview_fill_sentence">
                     {segments.map((segment, index) => {
                         if (segment !== "{{blank}}") {
@@ -419,10 +431,11 @@ export default function StepPreview() {
         return (
             <div className="preview_exercise_block">
                 <ExerciseHeader block={block} label="Matching" />
+                {pairs.some(pair=>pair.rightImageUrl)&&<div className="learner_matching_visual_bank">{pairs.map((pair,index)=>pair.rightImageUrl&&<figure key={pair.id||index}><span>{String.fromCharCode(65+index)}</span><img src={pair.rightImageUrl} alt={pair.rightAlt||pair.right||""}/>{pair.right&&<figcaption>{pair.right}</figcaption>}</figure>)}</div>}
                 <div className="preview_matching_grid">
                     {pairs.map((pair, index) => (
                         <div key={pair.id || index}>
-                            <span>{pair.left || `Item ${index + 1}`}</span>
+                            <span>{pair.leftImageUrl&&<img className="learner_exercise_item_image" src={pair.leftImageUrl} alt={pair.leftAlt||pair.left||""}/>} {pair.left || (!pair.leftImageUrl?`Item ${index + 1}`:"")}</span>
                             <i className="fa-solid fa-arrow-right" />
                             <select
                                 value={answers[block.id]?.[pair.id] || ""}
@@ -453,6 +466,11 @@ export default function StepPreview() {
                 />
             </div>
         );
+    }
+
+    function renderClassification(block) {
+        const items=block.content?.items||[],categories=block.content?.categories||[],values=answers[block.id]||{};
+        return <div className="preview_exercise_block"><ExerciseHeader block={block} label="Classification"/><h3>{block.content?.prompt||"Classify each item"}</h3><div className="preview_matching_grid">{items.map((item,index)=><div key={item.id||index}><span>{item.imageUrl&&<img className="learner_exercise_item_image" src={item.imageUrl} alt={item.alt||item.text||""}/>} {item.text||(!item.imageUrl?`Item ${index+1}`:"")}</span><i className="fa-solid fa-arrow-right"/><select value={values[item.id]||""} onChange={event=>setBlockAnswer(block.id,{...values,[item.id]:event.target.value})}><option value="">Choose a category</option>{categories.map(category=><option key={category.id} value={category.id}>{category.label}</option>)}</select></div>)}</div><ExerciseReveal block={block} revealed={revealed[block.id]} onToggle={()=>toggleReveal(block.id)}/></div>;
     }
 
     function renderOrdering(block) {
@@ -617,6 +635,18 @@ export default function StepPreview() {
                 return renderFile(block, false);
             case "TABLE":
                 return renderTable(block);
+            case "WHITEBOARD":
+                return <WhiteboardBlock block={block}/>;
+            case "EQUATION":
+                return <EquationBlock block={block}/>;
+            case "BUTTON":
+                return <div style={{textAlign:block.settings?.alignment||"left"}}><a className={`preview_button_block ${block.settings?.variant||"primary"}`} href={block.content?.url||"#"} target={block.settings?.openInNewTab!==false?"_blank":undefined} rel="noreferrer">{block.content?.label||"Open link"}</a></div>;
+            case "EMBED":
+                return block.content?.url?<iframe className="preview_embed_block" style={{height:block.settings?.height||500}} src={block.content.url} title={block.content.title||"Embedded resource"}/>:missingContent("fa-window-maximize","No resource URL has been added.");
+            case "CHECKLIST":
+            case "FLASHCARDS":
+            case "CANVAS":
+                return <ContentRenderer blocks={[block]}/>;
             case "LAYOUT":
                 return renderLayout(block);
             case "MULTIPLE_CHOICE":
@@ -629,6 +659,8 @@ export default function StepPreview() {
                 return renderFillBlanks(block);
             case "MATCHING":
                 return renderMatching(block);
+            case "CLASSIFICATION":
+                return renderClassification(block);
             case "ORDERING":
                 return renderOrdering(block);
             case "CHALLENGE": {
@@ -664,32 +696,6 @@ export default function StepPreview() {
                     </div>
                 );
             }
-            case "BUTTON":
-                return (
-                    <a
-                        className="preview_button_block"
-                        href={block.content?.url || "#"}
-                        target={
-                            block.settings?.openInNewTab ? "_blank" : "_self"
-                        }
-                        rel="noreferrer"
-                    >
-                        {block.content?.text ||
-                            block.content?.label ||
-                            "Open link"}
-                    </a>
-                );
-            case "EMBED":
-                return block.content?.url ? (
-                    <div className="preview_embed_block">
-                        <iframe
-                            src={block.content.url}
-                            title={block.content?.title || "Embedded content"}
-                        />
-                    </div>
-                ) : (
-                    missingContent("fa-code", "No embed URL has been added.")
-                );
             case "COLUMN":
                 return null;
             default:
@@ -757,13 +763,14 @@ export default function StepPreview() {
                     <div className="step_preview_mode">
                         <i className="fa-regular fa-eye" /> Learner preview
                     </div>
-                    <button
-                        type="button"
-                        className="step_preview_edit"
-                        onClick={() => navigate(`/studio/step/${stepId}`)}
-                    >
-                        <i className="fa-solid fa-pen" /> Edit Step
-                    </button>
+                    <div className="step_preview_actions">
+                        <button type="button" className="step_preview_present" onClick={()=>navigate(`/studio/step/${stepId}/present`)} title="Open a distraction-free view for screen sharing">
+                            <span className="step_present_icon"><i className="fa-solid fa-play"/></span>
+                            <span><strong>Start presentation</strong><small>Teach this Step live</small></span>
+                            <i className="fa-solid fa-arrow-up-right-from-square step_present_launch"/>
+                        </button>
+                        <button type="button" className="step_preview_edit" onClick={() => navigate(`/studio/step/${stepId}`)}><i className="fa-solid fa-pen" /> Edit Step</button>
+                    </div>
                 </header>
 
                 <article className="step_preview_document">
@@ -799,7 +806,7 @@ export default function StepPreview() {
                     </header>
 
                     <div className="step_preview_content">
-                        {rootBlocks.length === 0 ? (
+                        {visibleRootBlocks.length === 0 ? (
                             <div className="step_preview_empty">
                                 <div>
                                     <i className="fa-solid fa-cubes-stacked" />
@@ -816,7 +823,7 @@ export default function StepPreview() {
                                 </button>
                             </div>
                         ) : (
-                            rootBlocks.map((block) => (
+                            visibleRootBlocks.map((block) => (
                                 <section
                                     key={block.id}
                                     className={`step_preview_block block_${block.block_type.toLowerCase()}`}
@@ -827,17 +834,17 @@ export default function StepPreview() {
                         )}
                     </div>
 
-                    {rootBlocks.length > 0 && (
-                        <footer className="step_preview_footer">
-                            <div>
-                                <i className="fa-solid fa-circle-check" />
-                                <span>You have reached the end of this Step.</span>
-                            </div>
-                            <button type="button">
-                                Mark as completed <i className="fa-solid fa-check" />
-                            </button>
-                        </footer>
-                    )}
+                    <footer className="step_preview_footer step_preview_navigation">
+                        <button type="button" className="step_preview_nav_button previous" disabled={!previousStep} onClick={() => previousStep && navigate(`/studio/step/${previousStep.id}/preview`)}>
+                            <i className="fa-solid fa-arrow-left" />
+                            <span><small>Previous Step</small><strong>{previousStep?.title || "This is the first Step"}</strong></span>
+                        </button>
+                        <div className="step_preview_nav_position"><span>{currentStepIndex >= 0 ? currentStepIndex + 1 : "—"} of {journeySteps.length || "—"}</span></div>
+                        <button type="button" className="step_preview_nav_button next" disabled={!nextStep} onClick={() => nextStep && navigate(`/studio/step/${nextStep.id}/preview`)}>
+                            <span><small>Next Step</small><strong>{nextStep?.title || "This is the last Step"}</strong></span>
+                            <i className="fa-solid fa-arrow-right" />
+                        </button>
+                    </footer>
                 </article>
             </main>
         </StudioLayout>
@@ -898,6 +905,8 @@ function getCorrectAnswer(block) {
             return (block.content?.pairs || [])
                 .map((pair) => `${pair.left} → ${pair.right}`)
                 .join("; ");
+        case "CLASSIFICATION":
+            return (block.content?.items || []).map((item)=>`${item.text} → ${(block.content?.categories||[]).find(category=>category.id===(item.correctCategoryId||item.categoryId))?.label||""}`).join("; ");
         case "ORDERING":
             return (block.content?.items || [])
                 .map((item) => item.text)
@@ -954,4 +963,29 @@ function getYouTubeVideoId(url) {
     } catch {
         return null;
     }
+}
+
+function orderJourneySteps(stages, steps) {
+    const childrenByParent = new Map();
+    stages.forEach((stage) => {
+        const parent = stage.parent_stage_id || null;
+        if (!childrenByParent.has(parent)) childrenByParent.set(parent, []);
+        childrenByParent.get(parent).push(stage);
+    });
+    childrenByParent.forEach((children) => children.sort((a, b) => Number(a.position) - Number(b.position)));
+    const stepsByStage = new Map();
+    steps.forEach((item) => {
+        if (!stepsByStage.has(item.stage_id)) stepsByStage.set(item.stage_id, []);
+        stepsByStage.get(item.stage_id).push(item);
+    });
+    stepsByStage.forEach((items) => items.sort((a, b) => Number(a.position) - Number(b.position)));
+    const ordered = [];
+    function visit(parentId) {
+        (childrenByParent.get(parentId) || []).forEach((stage) => {
+            ordered.push(...(stepsByStage.get(stage.id) || []));
+            visit(stage.id);
+        });
+    }
+    visit(null);
+    return ordered;
 }

@@ -124,7 +124,8 @@ async function deleteStepImage(userId, stepId) {
     );
   }
 
-  return updated;
+  // Reload the enriched record so clients keep the Journey reference.
+  return stepModel.findStepById(stepId);
 }
 
 async function getStageForOwner(userId, stageId) {
@@ -232,7 +233,8 @@ async function getStepForOwner(userId, stepId) {
 }
 
 async function updateStep(userId, stepId, data = {}) {
-  await getStepForOwner(userId, stepId);
+  let ownedStep=await getStepForOwner(userId, stepId);
+  if(data.stageId&&data.stageId!==ownedStep.stage_id){const target=await getStageForOwner(userId,data.stageId);if(target.learning_journey_id!==ownedStep.learning_journey_id){const error=new Error("A Step can only move within the same Learning Journey");error.statusCode=400;throw error}ownedStep=await stepModel.moveStep(stepId,data.stageId)}
 
   if (
     data.title !== undefined &&
@@ -304,7 +306,9 @@ async function updateStep(userId, stepId, data = {}) {
     throw error;
   }
 
-  return updated;
+  // The update query returns only the steps table. Reload joins from Stage and
+  // Journey so moving a Step never drops learning_journey_id in the editor.
+  return stepModel.findStepById(stepId);
 }
 
 async function deleteStep(userId, stepId) {

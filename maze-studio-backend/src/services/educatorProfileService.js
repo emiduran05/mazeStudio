@@ -65,7 +65,7 @@ async function getPublic(identifier) {
       WHERE journey.owner_user_id=$1 AND journey.status='PUBLISHED' AND journey.visibility='PUBLIC'
         AND offering.status='PUBLISHED' ORDER BY journey.title`, [profile.educator_user_id])
   ]);
-  return { ...profile, blocks: blocks.rows, journeys: journeys.rows };
+  return { ...profile, description: profile.short_bio || null, blocks: blocks.rows.map(block=>({...block,content:block.content||{},settings:block.settings||{}})), journeys: journeys.rows };
 }
 
 module.exports = { getMine, save, uploadAsset, getPublic };

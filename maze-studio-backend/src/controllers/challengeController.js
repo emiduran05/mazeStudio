@@ -54,10 +54,12 @@ module.exports = {
     ),
   })),
   learnerSubmit: action(async (req) => ({ attempt: await service.submitLearnerAttempt(req.user.id, req.params.challengeId, req.body.answers || {}) }), 201),
+  learnerSpeakingUpload: action(async (req) => ({ asset: await service.uploadSpeakingResponse(req.user.id, req.params.challengeId, req.file) }), 201),
   learnerAttempts: action(async (req) => ({ attempts: await service.learnerAttempts(req.user.id, req.params.challengeId) })),
   learnerAttempt: action((req) => service.learnerAttempt(req.user.id, req.params.attemptId)),
   privateMetadata: action((req) => service.getPrivateMetadata(req.params.token)),
   privateSession: action((req) => service.createPrivateSession(req.params.token, req.body), 201),
   privateSubmit: action((req) => service.submitPrivateAttempt(req.params.token, req.body), 201),
+  privateSpeakingUpload: action(async (req) => ({ asset: await service.uploadPrivateSpeakingResponse(req.params.token, req.body.sessionToken, req.file) }), 201),
   privateAttempt: action((req) => service.privateAttempt(req.params.token, req.params.attemptToken, req.headers["x-challenge-session"])),
 };

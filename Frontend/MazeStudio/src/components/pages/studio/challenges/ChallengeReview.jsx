@@ -6,11 +6,13 @@ import {
   reviewSubmission,
 } from "../../../../api/challengeApi";
 import "./Challenges.css";
+import ReliableAudio from "../../../contentRenderer/ReliableAudio";
 
 const MANUAL_TYPES = new Set([
   "SHORT_ANSWER",
   "LONG_ANSWER",
   "FILE_UPLOAD",
+  "SPEAKING",
 ]);
 
 function optionText(answer, optionId) {
@@ -43,6 +45,8 @@ function readableAnswer(answer) {
   if (answer.question_type === "FILE_UPLOAD") {
     return value.name || value.originalName || "No file submitted";
   }
+
+  if (answer.question_type === "SPEAKING") return value.url ? "Audio response" : "No recording submitted";
 
   return value.text || value.value || "No answer";
 }
@@ -273,7 +277,9 @@ export default function ChallengeReview() {
                   <div className="challenge-answer-comparison">
                     <div>
                       <span>Learner answer</span>
-                      <strong>{readableAnswer(answer)}</strong>
+                      {answer.question_type === "SPEAKING" && answer.answer_json?.url
+                        ? <ReliableAudio className="challenge-review-audio" src={answer.answer_json.url} durationSeconds={answer.answer_json.durationSeconds}/>
+                        : <strong>{readableAnswer(answer)}</strong>}
                     </div>
                     {correctAnswer && (
                       <div>

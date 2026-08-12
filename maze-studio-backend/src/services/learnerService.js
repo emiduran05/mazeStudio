@@ -8,6 +8,7 @@ const EXERCISE_TYPES = new Set([
   "SHORT_ANSWER",
   "FILL_BLANKS",
   "MATCHING",
+  "CLASSIFICATION",
   "ORDERING",
 ]);
 
@@ -325,6 +326,9 @@ function sanitizeLearnerBlock(block) {
       return safeOption;
     });
   }
+  if (Array.isArray(content.items) && block.block_type === "CLASSIFICATION") {
+    content.items = content.items.map(({ correctCategoryId, categoryId, ...item }) => item);
+  }
 
   return {
     ...block,
@@ -399,6 +403,10 @@ async function checkExerciseAnswer(userId, blockId, answer) {
     throw error;
   }
 
+  return gradeExerciseBlock(block,answer);
+}
+
+function gradeExerciseBlock(block,answer) {
   const content = block.content || {};
   const normalized = (value) => String(value ?? "").trim().toLowerCase();
   let correct = false;
@@ -464,6 +472,12 @@ async function checkExerciseAnswer(userId, blockId, answer) {
         .join(" → ");
       break;
     }
+    case "CLASSIFICATION": {
+      const items=content.items||[],categories=content.categories||[];
+      correct=items.length>0&&items.every(item=>answer?.[item.id]===(item.correctCategoryId||item.categoryId));
+      correctAnswer=items.map(item=>`${item.text} → ${categories.find(category=>category.id===(item.correctCategoryId||item.categoryId))?.label||""}`).join("; ");
+      break;
+    }
     default:
       break;
   }
@@ -481,6 +495,7 @@ module.exports = {
   getStep,
   updateProgress,
   checkExerciseAnswer,
+  gradeExerciseBlock,
   submitChallengeAttempt: learnerModel.createChallengeAttempt,
   getChallengeAttempts: learnerModel.findChallengeAttempts,
   updateLearningPathGoal,

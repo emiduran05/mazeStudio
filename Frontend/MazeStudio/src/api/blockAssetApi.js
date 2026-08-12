@@ -63,3 +63,15 @@ export async function deleteBlockAsset(blockId) {
 
     return parseResponse(response);
 }
+
+export async function uploadInlineBlockImage(blockId,file){
+    const formData=new FormData();formData.append("file",file);
+    const response=await fetch(`${API_URL}/blocks/${blockId}/inline-image`,{method:"POST",headers:{Authorization:`Bearer ${getToken()}`},body:formData});
+    return parseResponse(response);
+}
+
+export async function uploadCanvasAsset(blockId,file){
+    const formData=new FormData();formData.append("file",file);
+    const response=await fetch(`${API_URL}/blocks/${blockId}/canvas-asset`,{method:"POST",headers:{Authorization:`Bearer ${getToken()}`},body:formData});
+    return parseResponse(response);
+}

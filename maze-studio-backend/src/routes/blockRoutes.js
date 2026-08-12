@@ -43,6 +43,8 @@ router.post(
   blockAssetUpload.single("file"),
   blockController.uploadAsset
 );
+router.post("/blocks/:blockId/inline-image",authMiddleware,educatorOnly,blockAssetUpload.single("file"),blockController.uploadInlineImage);
+router.post("/blocks/:blockId/canvas-asset",authMiddleware,educatorOnly,blockAssetUpload.single("file"),blockController.uploadCanvasAsset);
 
 router.delete(
   "/blocks/:blockId/asset",
@@ -50,6 +52,8 @@ router.delete(
   educatorOnly,
   blockController.removeAsset
 );
+
+router.post("/blocks/:blockId/presentation-check",authMiddleware,educatorOnly,blockController.checkPresentationExercise);
 
 router.post(
   "/steps/:stepId/layouts",

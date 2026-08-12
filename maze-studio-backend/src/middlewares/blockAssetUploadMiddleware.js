@@ -6,6 +6,13 @@ const allowedMimeTypes = new Set([
   "image/png",
   "image/webp",
   "image/gif",
+  "audio/mpeg",
+  "audio/wav",
+  "audio/webm",
+  "audio/ogg",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
 
   // PDF
   "application/pdf",
@@ -29,7 +36,7 @@ const blockAssetUpload = multer({
   storage: multer.memoryStorage(),
 
   limits: {
-    fileSize: 20 * 1024 * 1024,
+    fileSize: 100 * 1024 * 1024,
   },
 
   fileFilter(req, file, callback) {

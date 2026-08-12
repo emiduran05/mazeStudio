@@ -1,4 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { uploadSpeakingResponse } from "../../../api/challengeApi";
+import ContentRenderer from "../../contentRenderer/ContentRenderer";
+import ReliableAudio from "../../contentRenderer/ReliableAudio";
+import { normalizeRecordedAudio } from "../../../utils/audioRecording";
 
 const LABELS = {
   SINGLE_CHOICE: "Single choice",
@@ -8,6 +12,7 @@ const LABELS = {
   SHORT_ANSWER: "Short answer",
   LONG_ANSWER: "Long answer",
   FILE_UPLOAD: "File upload",
+  SPEAKING: "Speaking response",
 };
 const QUESTION_TYPES = new Set(Object.keys(LABELS));
 
@@ -15,6 +20,7 @@ export default function ChallengeRunner({
   challenge,
   onSubmit,
   submitting,
+  uploadSpeaking,
 }) {
   const [answers, setAnswers] = useState({});
   const set = (id, value) =>
@@ -32,7 +38,7 @@ export default function ChallengeRunner({
         {(challenge.blocks?.length ? challenge.blocks : (challenge.questions || []).map((question)=>({
           ...question, block_type:question.question_type, question_id:question.id,
         }))).map((block, index) => {
-          if(!QUESTION_TYPES.has(block.block_type)) return <ContentBlock block={block} key={block.id}/>;
+          if(!QUESTION_TYPES.has(block.block_type)) return <ContentRenderer blocks={[block]} key={block.id}/>;
           const question={...block,id:block.question_id||block.id,question_type:block.block_type};
           return (
           <fieldset
@@ -125,6 +131,8 @@ export default function ChallengeRunner({
                   <strong>File response</strong>
                   <span>File submission is not configured yet.</span>
                 </div>
+              ) : question.question_type === "SPEAKING" ? (
+                <SpeakingRecorder challengeId={challenge.id} required={question.is_required} uploadSpeaking={uploadSpeaking} onReady={(asset)=>set(question.id, asset)} />
               ) : (
                 <textarea
                   rows={
@@ -161,18 +169,39 @@ export default function ChallengeRunner({
   );
 }
 
-function ContentBlock({block}){
-  const content=block.content||{};
-  const type=block.block_type;
-  if(type==="HEADING") return <h2 className="learner_content_heading">{content.text}</h2>;
-  if(type==="TEXT") return <div className="learner_content_text">{content.text}</div>;
-  if(type==="IMAGE") return <figure className="learner_content_media"><img src={content.url} alt={content.alt||""}/>{content.caption&&<figcaption>{content.caption}</figcaption>}</figure>;
-  if(type==="VIDEO") return <div className="learner_content_media"><iframe src={content.url} title="Challenge video" allowFullScreen/></div>;
-  if(type==="TABLE") return <div className="learner_content_table"><table><tbody>{(content.rows||[]).map((row,index)=><tr key={index}>{row.map((cell,cellIndex)=><td key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table></div>;
-  if(type==="CODE") return <pre className="learner_content_code"><code>{content.text}</code></pre>;
-  if(type==="QUOTE") return <blockquote className="learner_content_quote">{content.text}</blockquote>;
-  if(type==="CALLOUT") return <aside className="learner_content_callout"><i className="fa-solid fa-lightbulb"/><span>{content.text}</span></aside>;
-  if(type==="DIVIDER") return <hr className="learner_content_divider"/>;
-  if(["FILE","PDF"].includes(type)) return <a className="learner_content_file" href={content.url} target="_blank" rel="noreferrer"><i className={`fa-solid ${type==="PDF"?"fa-file-pdf":"fa-file-arrow-down"}`}/><span><strong>{content.name||"Attached file"}</strong><small>Open attachment</small></span></a>;
-  return null;
+function SpeakingRecorder({ challengeId, required, uploadSpeaking, onReady }) {
+  const recorderRef = useRef(null);
+  const chunksRef = useRef([]);
+  const streamRef = useRef(null);
+  const startedAtRef = useRef(0);
+  const durationRef = useRef(0);
+  const [recording,setRecording]=useState(false);
+  const [uploading,setUploading]=useState(false);
+  const [preview,setPreview]=useState("");
+  const [error,setError]=useState("");
+  async function start(){
+    try{
+      setError("");
+      const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+      streamRef.current=stream;chunksRef.current=[];
+      const recorder=new MediaRecorder(stream);recorderRef.current=recorder;
+      recorder.ondataavailable=(event)=>{if(event.data.size)chunksRef.current.push(event.data)};
+      recorder.onstop=async()=>{
+        stream.getTracks().forEach((track)=>track.stop());
+        const recordedBlob=new Blob(chunksRef.current,{type:recorder.mimeType||"audio/webm"});setUploading(true);
+        try{const normalized=await normalizeRecordedAudio(recordedBlob);durationRef.current=normalized.durationSeconds||Math.max(1,(Date.now()-startedAtRef.current)/1000);const localUrl=URL.createObjectURL(normalized.blob);setPreview(localUrl);const file=new File([normalized.blob],`speaking-${Date.now()}.${normalized.extension}`,{type:normalized.blob.type});const {asset}=await (uploadSpeaking?uploadSpeaking(file):uploadSpeakingResponse(challengeId,file));onReady({...asset,durationSeconds:durationRef.current})}
+        catch(uploadError){setError(uploadError.message);setPreview("")}finally{setUploading(false)}
+      };
+      recorder.start(250);startedAtRef.current=Date.now();setRecording(true);
+    }catch(mediaError){setError(mediaError.message||"Microphone access was denied.")}
+  }
+  function stop(){recorderRef.current?.stop();setRecording(false)}
+  return <div className="speaking_recorder">
+    <div className={`speaking_recorder_icon ${recording?"recording":""}`}><i className="fa-solid fa-microphone"/></div>
+    <div><strong>{recording?"Recording your answer…":preview?"Recording ready":"Record your spoken answer"}</strong><span>{uploading?"Uploading securely…":"You can listen before submitting."}</span></div>
+    {preview&&<ReliableAudio src={preview} durationSeconds={durationRef.current}/>} 
+    <button type="button" onClick={recording?stop:start} disabled={uploading}>{recording?"Stop recording":preview?"Record again":"Start recording"}</button>
+    {required&&<input className="speaking_required" required value={preview} onChange={()=>{}} aria-label="Speaking response required"/>}
+    {error&&<p className="speaking_error">{error}</p>}
+  </div>;
 }

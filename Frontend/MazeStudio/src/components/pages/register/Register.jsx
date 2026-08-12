@@ -15,11 +15,12 @@ export default function Register() {
 
     const invitationToken = searchParams.get("invitation");
     const profileLinkToken = searchParams.get("profileLink");
+    const returnTo = searchParams.get("returnTo");
     const paymentCancelled =
         searchParams.get("payment") === "cancelled";
 
     const [form, setForm] = useState({
-        role: invitationToken || profileLinkToken ? "STUDENT" : "EDUCATOR",
+        role: invitationToken || profileLinkToken || returnTo?.startsWith("/marketplace") ? "STUDENT" : "EDUCATOR",
         firstName: "",
         lastName: "",
         email: "",
@@ -160,9 +161,12 @@ export default function Register() {
                 }
             }
 
+            const safeReturnTo = returnTo?.startsWith("/") && !returnTo.startsWith("//") ? returnTo : null;
             navigate(
                 profileLinkToken
                     ? `/link-learner-profile?token=${encodeURIComponent(profileLinkToken)}`
+                    : safeReturnTo
+                    ? safeReturnTo
                     : form.role === "EDUCATOR"
                     ? "/studio"
                     : "/my-learning",

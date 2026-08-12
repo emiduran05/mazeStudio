@@ -7,6 +7,8 @@ async function create({recipientUserId,recipientProfileId,actorUserId=null,type,
   if(preferenceKey){const preference=await client.query(`SELECT in_app_enabled,${preferenceKey} enabled FROM notification_preferences WHERE user_id=$1::uuid`,[userId]);if(preference.rows[0]&&(!preference.rows[0].in_app_enabled||!preference.rows[0].enabled))return null;}
   const result=await client.query(`INSERT INTO notifications(recipient_user_id,actor_user_id,notification_type,title,body,action_url,entity_type,entity_id,metadata,deduplication_key)
     VALUES($1::uuid,$2::uuid,$3,$4,$5,$6,$7,$8::uuid,$9::jsonb,$10) ON CONFLICT(recipient_user_id,deduplication_key) DO NOTHING RETURNING *`,[userId,actorUserId,type,title,body,actionUrl,entityType,entityId,JSON.stringify(metadata),deduplicationKey]);
-  return result.rows[0]||null;
+  const notification=result.rows[0]||null;
+  if(notification){const preference=await client.query("SELECT email_enabled FROM notification_preferences WHERE user_id=$1::uuid",[userId]);if(preference.rows[0]?.email_enabled!==false)await client.query("INSERT INTO notification_deliveries(notification_id,channel) VALUES($1,'EMAIL')",[notification.id]);}
+  return notification;
 }
 module.exports={create};

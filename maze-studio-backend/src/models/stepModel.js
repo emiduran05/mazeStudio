@@ -132,6 +132,11 @@ async function updateStep(stepId, data = {}) {
   return result.rows[0];
 }
 
+async function moveStep(stepId,targetStageId){
+  const client=await pool.connect();
+  try{await client.query("BEGIN");const current=(await client.query("SELECT stage_id FROM steps WHERE id=$1 FOR UPDATE",[stepId])).rows[0];if(!current)throw new Error("Step not found");if(current.stage_id===targetStageId){await client.query("COMMIT");return(await pool.query("SELECT * FROM steps WHERE id=$1",[stepId])).rows[0]}const position=Number((await client.query("SELECT COALESCE(MAX(position),0)+1 next_position FROM steps WHERE stage_id=$1",[targetStageId])).rows[0].next_position);const moved=(await client.query("UPDATE steps SET stage_id=$1,position=$2,updated_at=NOW() WHERE id=$3 RETURNING *",[targetStageId,position,stepId])).rows[0];await client.query(`WITH ordered AS(SELECT id,ROW_NUMBER() OVER(ORDER BY position,created_at) position FROM steps WHERE stage_id=$1) UPDATE steps SET position=ordered.position FROM ordered WHERE steps.id=ordered.id`,[current.stage_id]);await client.query("COMMIT");return moved}catch(error){await client.query("ROLLBACK");throw error}finally{client.release()}
+}
+
 async function deleteStep(stepId) {
   const result = await pool.query(
     `
@@ -289,6 +294,7 @@ module.exports = {
   findStepById,
   getNextPosition,
   updateStep,
+  moveStep,
   deleteStep,
   compactPositions,
   reorderSteps,

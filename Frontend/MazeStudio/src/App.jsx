@@ -44,6 +44,16 @@ import Calendar from "./components/pages/calendar/Calendar";
 import EducatorProfileEditor from "./components/pages/settings/EducatorProfileEditor";
 import EducatorProfile from "./components/pages/student/EducatorProfile";
 import PublicStepPreview from "./components/pages/student/PublicStepPreview";
+import Classroom from "./components/pages/classroom/Classroom";
+import StepPresentation from "./components/pages/studio/stepPreview/StepPresentation";
+import EventLessonPlan from "./components/pages/classroom/EventLessonPlan";
+import StudioSearch from "./components/pages/search/StudioSearch";
+import StepCanvasEditor from "./components/pages/studio/canvasLab/StepCanvasEditor";
+import StudentPortal from "./components/pages/studio/studentPortal/StudentPortal";
+import StudentStepControl from "./components/pages/studio/studentPortal/StudentStepControl";
+import LearnerStepPresentation from "./components/pages/student/LearnerStepPresentation";
+
+const mazeCanvasEnabled = import.meta.env.VITE_ENABLE_MAZE_CANVAS !== "false";
 
 export default function App() {
     if (window.location.pathname.startsWith("//")) {
@@ -72,8 +82,16 @@ export default function App() {
                 />
 
                 <Route path="/my-settings/security" element={<ProtectedRoute><AccountRoleRoute audience="educator"><Security /></AccountRoleRoute></ProtectedRoute>} />
+                <Route path="/classroom/:eventId" element={<ProtectedRoute><Classroom /></ProtectedRoute>} />
+                <Route path="/studio/step/:stepId/present" element={<ProtectedRoute><AccountRoleRoute audience="educator"><StepPresentation /></AccountRoleRoute></ProtectedRoute>} />
+                <Route path="/calendar/events/:eventId/lesson-plan" element={<ProtectedRoute><AccountRoleRoute audience="educator"><EventLessonPlan /></AccountRoleRoute></ProtectedRoute>} />
 
                 <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+                <Route path="/studio/search" element={<ProtectedRoute><AccountRoleRoute audience="educator"><StudioSearch /></AccountRoleRoute></ProtectedRoute>} />
+                {mazeCanvasEnabled && <Route path="/studio/step/:stepId/canvas/:blockId" element={<ProtectedRoute><AccountRoleRoute audience="educator"><StepCanvasEditor /></AccountRoleRoute></ProtectedRoute>} />}
+                <Route path="/studio/students/:enrollmentId" element={<ProtectedRoute><AccountRoleRoute audience="educator"><StudentPortal /></AccountRoleRoute></ProtectedRoute>} />
+                <Route path="/studio/students/:enrollmentId/steps/:stepId" element={<ProtectedRoute><AccountRoleRoute audience="educator"><StudentStepControl /></AccountRoleRoute></ProtectedRoute>} />
+                <Route path="/studio/students/:enrollmentId/steps/:stepId/present" element={<ProtectedRoute><AccountRoleRoute audience="educator"><StudentStepControl presentation /></AccountRoleRoute></ProtectedRoute>} />
                 <Route path="/calendar" element={<ProtectedRoute><AccountRoleRoute audience="educator"><Calendar /></AccountRoleRoute></ProtectedRoute>} />
                 <Route path="/insights" element={<ProtectedRoute><AccountRoleRoute audience="educator"><Insights /></AccountRoleRoute></ProtectedRoute>} />
 
@@ -99,6 +117,7 @@ export default function App() {
                         path="/learn/journeys/:journeyId/steps/:stepId"
                         element={<LearnerStep />}
                     />
+                    <Route path="/learn/journeys/:journeyId/steps/:stepId/present" element={<LearnerStepPresentation />} />
                     <Route path="/learn/challenges/:challengeId" element={<LearnerChallengePage />} />
                     <Route path="/student" element={<Navigate to="/my-learning" replace />} />
                 </Route>

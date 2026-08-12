@@ -1,0 +1,1 @@
+const service=require("../services/whiteboardService");async function get(req,res,next){try{res.json(await service.get(req.params.eventId,req.user.id))}catch(error){next(error)}}async function save(req,res,next){try{res.json(await service.save(req.params.eventId,req.user.id,req.body))}catch(error){next(error)}}module.exports={get,save};

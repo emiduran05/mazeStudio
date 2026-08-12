@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 3000;
 const {
   startAccountCleanupJob,
 } = require("./jobs/accountCleanupJob");
+const {startOperationsJob}=require("./jobs/operationsJob");
 
 async function startServer() {
   try {
@@ -19,6 +20,7 @@ async function startServer() {
     });
 
     startAccountCleanupJob();
+    startOperationsJob();
   } catch (error) {
     console.error("Database connection failed:", error.message);
     process.exit(1);

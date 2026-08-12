@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import useEnrollments from "../../../hooks/useEnrollments";
 import "./StudentPages.css";
+import "./JourneyImageFixes.css";
 import WeeklySubscriptions from "./WeeklySubscriptions";
 import PurchaseHistory from "./PurchaseHistory";
 
@@ -160,6 +161,7 @@ function JourneyCard({ journey }) {
                                 .join(" · ") || "Ready to learn"}
                         </strong>
                     </div>
+                    <Link className="student_text_link" to={`/marketplace/journeys/${journey.learningJourneyId}`}>Rate course</Link>
                     <Link
                         to={
                             journey.nextStep

@@ -9,6 +9,7 @@ import {
 } from "../../../../api/imageApi";
 import BlockPicker from "./components/BlockPicker";
 import BlockTree from "./components/BlockTree";
+import AIContentAssistant from "./components/AIContentAssistant";
 import {createPrivateStepLink,listPrivateStepLinks,revokePrivateStepLink} from "../../../../api/privateStepApi";
 import "./StepEditor.css";
 
@@ -22,6 +23,11 @@ function createClientId() {
 
 function getInitialBlockData(blockType) {
     switch (blockType) {
+        case "CANVAS":
+            return {
+                content: { document: null },
+                settings: { aspectRatio: "16:9", startMode: "inline" },
+            };
         case "HEADING":
             return {
                 content: { text: "", level: 2 },
@@ -31,7 +37,7 @@ function getInitialBlockData(blockType) {
         case "TEXT":
             return {
                 content: { text: "" },
-                settings: {},
+                settings: {fontSize:16,color:"",backgroundColor:"",fontFamily:"inherit",fontWeight:400,textAlign:"left",lineHeight:1.7,letterSpacing:0,maxWidth:"100%"},
             };
 
         case "IMAGE":
@@ -194,6 +200,7 @@ function getInitialBlockData(blockType) {
                 content: {
                     text: "The answer is {{blank}}.",
                     acceptedAnswers: [""],
+                    wordBank: ["", ""],
                     explanation: "",
                 },
                 settings: {
@@ -228,6 +235,26 @@ function getInitialBlockData(blockType) {
                 settings: { points: 2 },
             };
 
+        case "CLASSIFICATION": {
+            const first=createClientId(),second=createClientId();
+            return {content:{prompt:"Classify each item",categories:[{id:first,label:"Category 1"},{id:second,label:"Category 2"}],items:[{id:createClientId(),text:"",correctCategoryId:first},{id:createClientId(),text:"",correctCategoryId:second}],explanation:""},settings:{points:2}};
+        }
+
+        case "CHECKLIST":
+            return { content: { title: "Checklist", items: [{ id:createClientId(), text:"" }, { id:createClientId(), text:"" }] }, settings: {} };
+
+        case "FLASHCARDS":
+            return { content: { title: "Review cards", cards: [{ id:createClientId(), front:"", back:"" }, { id:createClientId(), front:"", back:"" }] }, settings: { shuffle:false } };
+
+        case "WHITEBOARD":
+            return {
+                content: { title: "Whiteboard", prompt: "Use this space to work through the activity." },
+                settings: { height: 420, background: "GRID", allowLearnerClear: true },
+            };
+
+        case "EQUATION":
+            return { content: { expression: "", caption: "" }, settings: { display: "BLOCK", align: "center" } };
+
         case "CHALLENGE":
             return {
                 content: { challengeId: "" },
@@ -258,6 +285,7 @@ export default function StepEditor() {
 
     const [imageFile, setImageFile] = useState(null);
     const [imagePreview, setImagePreview] = useState("");
+    const [stages, setStages] = useState([]);
     const [uploadingImage, setUploadingImage] = useState(false);
 
     const [blocks, setBlocks] = useState([]);
@@ -265,6 +293,7 @@ export default function StepEditor() {
     const [blockPickerOpen, setBlockPickerOpen] = useState(false);
     const [blockPickerParentId, setBlockPickerParentId] = useState(null);
     const [creatingBlock, setCreatingBlock] = useState(false);
+    const [aiAssistantOpen,setAiAssistantOpen]=useState(false);
     const [availableChallenges, setAvailableChallenges] = useState([]);
     const [privateLinksOpen,setPrivateLinksOpen]=useState(false);
     const [privateLearners,setPrivateLearners]=useState([]);
@@ -298,7 +327,10 @@ export default function StepEditor() {
                     icon: loadedStep.icon || "fa-file-lines",
                     emoji: loadedStep.emoji || "",
                     color: loadedStep.color || "purple",
+                    stageId: loadedStep.stage_id,
                 });
+                const builderData=await apiRequest(`/learning-journeys/${loadedStep.learning_journey_id}/builder`);
+                setStages((builderData.stages||[]).sort((a,b)=>Number(a.position)-Number(b.position)));
                 const challengeData = await apiRequest(
                     `/learning-journeys/${loadedStep.learning_journey_id}/challenges`
                 );
@@ -702,7 +734,7 @@ export default function StepEditor() {
             const data = await deleteStepImage(stepId);
             const updatedStep = data.step;
 
-            setStep(updatedStep);
+            setStep((current) => ({ ...current, ...updatedStep }));
             setImageFile(null);
             setImagePreview("");
             setForm((current) => ({
@@ -759,6 +791,7 @@ export default function StepEditor() {
                     icon: form.icon,
                     emoji: form.emoji.trim() || null,
                     color: form.color,
+                    stageId: form.stageId,
                 }),
             });
 
@@ -770,7 +803,7 @@ export default function StepEditor() {
                 updatedStep = imageData.step;
             }
 
-            setStep(updatedStep);
+            setStep((current) => ({ ...current, ...updatedStep }));
             setImageFile(null);
             setImagePreview(updatedStep.image_url || "");
             setForm({
@@ -783,6 +816,7 @@ export default function StepEditor() {
                 icon: updatedStep.icon || "fa-file-lines",
                 emoji: updatedStep.emoji || "",
                 color: updatedStep.color || "purple",
+                stageId: updatedStep.stage_id,
             });
             setMessage("Step updated successfully.");
         } catch (err) {
@@ -843,7 +877,13 @@ export default function StepEditor() {
                         <button
                             type="button"
                             className="step_back_button"
-                            onClick={() => navigate(-1)}
+                            onClick={() => {
+                                if (step?.learning_journey_id) {
+                                    navigate(`/studio/journey/${step.learning_journey_id}`);
+                                } else {
+                                    setError("The Journey reference is missing. Reload the Step and try again.");
+                                }
+                            }}
                         >
                             <i className="fa-solid fa-arrow-left" />
                             Back to Journey
@@ -902,6 +942,7 @@ export default function StepEditor() {
                                 </p>
                             </div>
 
+                            <button type="button" className="ai_content_button" onClick={()=>setAiAssistantOpen(true)}><i className="fa-solid fa-wand-magic-sparkles"/> Create with AI</button>
                             <button
                                 type="button"
                                 className="add_block_button"
@@ -1018,6 +1059,8 @@ export default function StepEditor() {
                                     <option value="ARCHIVED">Archived</option>
                                 </select>
                             </div>
+
+                            <div className="step_form_group"><label>Stage</label><select name="stageId" value={form.stageId||""} onChange={handleChange}>{stages.map(stage=><option key={stage.id} value={stage.id}>{stage.parent_stage_id?"↳ ":""}{stage.title}</option>)}</select><small>Move this Step to another Stage without losing its content or progress.</small></div>
 
                             <div className="step_form_group">
                                 <label>Estimated minutes</label>
@@ -1222,6 +1265,7 @@ export default function StepEditor() {
                     </aside>
                 </div>
 
+                {aiAssistantOpen&&<AIContentAssistant stepId={stepId} onClose={()=>setAiAssistantOpen(false)} onApplied={created=>{setBlocks(current=>[...current,...created]);setMessage(`${created.length} AI-generated blocks added. Review and edit them before publishing.`)}}/>}
                 <BlockPicker
                     isOpen={blockPickerOpen}
                     onClose={closeBlockPicker}

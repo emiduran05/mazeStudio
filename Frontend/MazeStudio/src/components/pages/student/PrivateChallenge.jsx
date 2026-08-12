@@ -5,6 +5,7 @@ import {
   getPrivateChallenge,
   startPrivateSession,
   submitPrivateChallenge,
+  uploadPrivateSpeakingResponse,
 } from "../../../api/challengeApi";
 import ChallengeRunner from "./ChallengeRunner";
 import "./LearnerFlow.css";
@@ -200,6 +201,7 @@ export default function PrivateChallenge() {
             challenge={challenge}
             onSubmit={submit}
             submitting={submitting}
+            uploadSpeaking={(file) => uploadPrivateSpeakingResponse(token, session, file)}
           />
         </section>
       )}

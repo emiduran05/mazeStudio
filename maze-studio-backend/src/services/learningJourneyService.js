@@ -1,6 +1,7 @@
 const learningJourneyModel = require("../models/learningJourneyModel");
 const storageService = require("./storageService");
 const journeyAccess = require("./journeyAccessService");
+const pool = require("../config/db");
 async function uploadJourneyCover(
   userId,
   journeyId,
@@ -155,6 +156,16 @@ if (
     throw error;
   }
 
+  if (status === "PUBLISHED") {
+    const payout = (await pool.query(`SELECT connect_details_submitted,connect_charges_enabled,connect_payouts_enabled
+      FROM users WHERE id=$1::uuid`, [userId])).rows[0];
+    if (!payout?.connect_details_submitted || !payout.connect_charges_enabled || !payout.connect_payouts_enabled) {
+      const error = new Error("Complete Stripe payout onboarding before publishing a Learning Journey");
+      error.statusCode = 409;
+      throw error;
+    }
+  }
+
 return learningJourneyModel.createJourney({
   ownerUserId: userId,
   title: title.trim(),
@@ -195,6 +206,16 @@ async function updateLearningJourney(
 ) {
   const journey = await getLearningJourney(userId, journeyId);
   await journeyAccess.requireAccess(userId, journeyId, "EDIT");
+
+  if (data.status === "PUBLISHED" && journey.status !== "PUBLISHED") {
+    const payout = (await pool.query(`SELECT connect_details_submitted,connect_charges_enabled,connect_payouts_enabled
+      FROM users WHERE id=$1::uuid`, [journey.owner_user_id])).rows[0];
+    if (!payout?.connect_details_submitted || !payout.connect_charges_enabled || !payout.connect_payouts_enabled) {
+      const error = new Error("Complete Stripe payout onboarding before publishing a Learning Journey");
+      error.statusCode = 409;
+      throw error;
+    }
+  }
 
   const allowedVisualTypes = [
     "ICON",

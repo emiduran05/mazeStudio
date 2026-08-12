@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 
-const getNavigationGroups = (canAccessStudio, isEducator) => [
+const getNavigationGroups = (canAccessStudio, isEducator, authenticated) => authenticated ? [
     {
         label: "Learning",
         items: [
@@ -59,7 +59,7 @@ const getNavigationGroups = (canAccessStudio, isEducator) => [
             },
         ],
     },
-];
+] : [{label:"Discover",items:[{to:"/marketplace",icon:"fa-solid fa-compass",label:"Marketplace"}]}];
 
 export default function StudentSidebar({
     open,
@@ -76,7 +76,8 @@ export default function StudentSidebar({
         );
     const navigationGroups = getNavigationGroups(
         canAccessStudio,
-        user?.role === "EDUCATOR"
+        user?.role === "EDUCATOR",
+        Boolean(user)
     );
 
     return (
@@ -91,7 +92,7 @@ export default function StudentSidebar({
         >
             <div className="student_sidebar_top">
                 <NavLink
-                    to="/my-learning"
+                    to={user?"/my-learning":"/marketplace"}
                     className="student_brand"
                     onClick={onClose}
                 >

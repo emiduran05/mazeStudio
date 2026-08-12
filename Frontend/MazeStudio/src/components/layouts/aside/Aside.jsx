@@ -42,7 +42,7 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                                 className={({ isActive }) =>
                                     isActive ? "link active" : "link"
                                 }>
-                                <i class="fa-solid fa-pen"></i>
+                                <i className="fa-solid fa-pen"></i>
 
                                 <span>Studio</span>
                             </NavLink>
@@ -60,10 +60,11 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                                 className={({ isActive }) =>
                                     isActive ? "link active" : "link"
                                 }>
-                                <i class="fa-solid fa-chart-bar"></i>
+                                <i className="fa-solid fa-chart-bar"></i>
 
                                 <span>Insights</span>
                             </NavLink>
+
 
                             <NavLink to="/marketplace"
                                 className={({ isActive }) =>
@@ -78,7 +79,7 @@ export default function Aside({ isOpen, darkmode, setDarkmode }) {
                                 className={({ isActive }) =>
                                     isActive ? "link active" : "link"
                                 }>
-                                <i class="fa-solid fa-gear"></i>
+                                <i className="fa-solid fa-gear"></i>
 
                                 <span>Settings</span>
                             </NavLink>

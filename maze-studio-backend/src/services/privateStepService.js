@@ -98,6 +98,7 @@ async function metadata(token) {
 function sanitizeBlock(block) {
   const content={...(block.content||{})};
   delete content.correctAnswer;delete content.acceptedAnswers;delete content.explanation;
+  if(block.block_type==="CLASSIFICATION"&&Array.isArray(content.items))content.items=content.items.map(({correctCategoryId,categoryId,...item})=>item);
   if(Array.isArray(content.options))content.options=content.options.map(({isCorrect,...option})=>option);
   return {...block,content};
 }
@@ -200,6 +201,8 @@ async function gradePublicExercise(blockId,answer) {
     correct=expected.length===received.length&&expected.every((v,i)=>normalized(v)===normalized(received[i]));
   } else if(block.block_type==="MATCHING"){
     correct=(content.pairs||[]).every(pair=>answer?.[pair.id]===pair.id);
+  } else if(block.block_type==="CLASSIFICATION"){
+    correct=(content.items||[]).length>0&&(content.items||[]).every(item=>answer?.[item.id]===(item.correctCategoryId||item.categoryId));
   } else if(block.block_type==="ORDERING"){
     const expected=(content.items||[]).map(item=>item.id);
     const received=(Array.isArray(answer)?answer:[]).map(item=>item?.id||item);

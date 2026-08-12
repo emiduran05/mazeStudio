@@ -102,6 +102,7 @@ export default function LearnerStep() {
                     <h1>{step.title}</h1>
                     {step.description && <p>{step.description}</p>}
                 </div>
+                <Link className="learner_present_step" to={`/learn/journeys/${journeyId}/steps/${stepId}/present`}><i className="fa-solid fa-display"/> Present</Link>
             </header>
 
             <section className="learner_step_content">

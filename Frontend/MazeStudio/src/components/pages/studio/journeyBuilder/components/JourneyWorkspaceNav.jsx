@@ -29,20 +29,6 @@ export default function JourneyWorkspaceNav({
                 Offers
             </Link>}
             {accessRole === "OWNER" && <Link
-                className={active === "COHORTS" ? "active" : ""}
-                to={`/studio/journey/${journeyId}?section=cohorts`}
-            >
-                <i className="fa-solid fa-people-roof" />
-                Groups / Cohorts
-            </Link>}
-            {accessRole === "OWNER" && <Link
-                className={active === "SESSIONS" ? "active" : ""}
-                to={`/studio/journey/${journeyId}?section=sessions`}
-            >
-                <i className="fa-solid fa-repeat" />
-                Sessions
-            </Link>}
-            {accessRole === "OWNER" && <Link
                 className={active === "CHALLENGES" ? "active" : ""}
                 to={`/studio/journeys/${journeyId}/challenges`}
             >

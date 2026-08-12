@@ -1,0 +1,1 @@
+const jwt=require("jsonwebtoken");module.exports=function optionalAuth(req,res,next){const header=req.headers.authorization;if(!header?.startsWith("Bearer "))return next();try{const decoded=jwt.verify(header.slice(7),process.env.JWT_SECRET);req.user={id:decoded.id,role:decoded.role,email:decoded.email}}catch{}next()};

@@ -175,6 +175,14 @@ async function sendLearnerProfileLink({
   return { messageId: info.messageId, accepted: info.accepted, rejected: info.rejected };
 }
 
+async function sendNotificationEmail({recipientEmail,title,body,actionUrl}) {
+  const senderAddress=process.env.EMAIL_FROM_ADDRESS||process.env.EMAIL_USER;
+  if(!senderAddress) throw new Error("EMAIL_FROM_ADDRESS or EMAIL_USER is missing");
+  const base=String(process.env.FRONTEND_URL||"").replace(/\/+$/,"");
+  const url=actionUrl?`${base}${actionUrl.startsWith("/")?actionUrl:`/${actionUrl}`}`:base;
+  return transporter.sendMail({from:{name:process.env.EMAIL_FROM_NAME||"Maze Studio",address:senderAddress},to:recipientEmail,subject:title,text:[body,"",url?`Open Maze Studio: ${url}`:""].filter(Boolean).join("\n"),html:`<div style="max-width:600px;margin:32px auto;padding:32px;border:1px solid #e7e7f5;border-radius:22px;font-family:Arial,sans-serif;color:#111827"><strong style="color:#4642ff">Maze Studio</strong><h1 style="font-size:25px">${escapeHtml(title)}</h1><p style="color:#4b5563;line-height:1.7">${escapeHtml(body)}</p>${url?`<a href="${escapeHtml(url)}" style="display:inline-block;padding:13px 20px;border-radius:13px;background:#4642ff;color:#fff;text-decoration:none;font-weight:800">Open Maze Studio</a>`:""}<p style="margin-top:24px;color:#9ca3af;font-size:12px">You can manage email notifications from your Maze Studio preferences.</p></div>`});
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -187,4 +195,5 @@ function escapeHtml(value) {
 module.exports = {
   sendJourneyInvitation,
   sendLearnerProfileLink,
+  sendNotificationEmail,
 };

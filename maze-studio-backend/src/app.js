@@ -37,6 +37,11 @@ const marketplaceRoutes = require("./routes/marketplaceRoutes");
 const connectRoutes = require("./routes/connectRoutes");
 const refundRoutes = require("./routes/refundRoutes");
 const educatorProfileRoutes = require("./routes/educatorProfileRoutes");
+const sessionIncidentRoutes = require("./routes/sessionIncidentRoutes");
+const videoRoutes = require("./routes/videoRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const searchRoutes = require("./routes/searchRoutes");
+const aiContentRoutes = require("./routes/aiContentRoutes");
 
 const app = express();
 
@@ -73,6 +78,11 @@ app.use("/api", marketplaceRoutes);
 app.use("/api", connectRoutes);
 app.use("/api", refundRoutes);
 app.use("/api", educatorProfileRoutes);
+app.use("/api", sessionIncidentRoutes);
+app.use("/api", videoRoutes);
+app.use("/api", reviewRoutes);
+app.use("/api", searchRoutes);
+app.use("/api", aiContentRoutes);
 app.use("/api/public", publicChallengeRoutes);
 
 app.use(errorHandler);

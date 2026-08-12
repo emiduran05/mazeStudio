@@ -1,0 +1,2 @@
+const router=require("express").Router(),auth=require("../middlewares/authMiddleware"),optionalAuth=require("../middlewares/optionalAuthMiddleware"),controller=require("../controllers/reviewController");
+router.get("/reviews/journeys/:journeyId",optionalAuth,controller.journey);router.get("/reviews/educators/:educatorId",controller.educator);router.put("/reviews/journeys/:journeyId",auth,controller.save);module.exports=router;

@@ -1,0 +1,1 @@
+.student_step_open{flex:1;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:transparent;color:inherit;padding:7px 0;text-align:left;cursor:pointer}.student_step_open:hover strong{color:#4a45ff}.student_step_open>span{display:grid}.student_step_open>i{color:#4a45ff}

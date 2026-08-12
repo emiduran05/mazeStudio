@@ -15,6 +15,10 @@ module.exports = {
   recordProgress: action((req) => service.recordStepProgress(
     req.user.id, req.params.enrollmentId, req.params.stepId, req.body.status
   )),
+  enrollmentStep: action((req)=>service.getEnrollmentStep(req.user.id,req.params.enrollmentId,req.params.stepId)),
+  memory: action((req) => service.getTeachingMemory(req.user.id, req.params.enrollmentId)),
+  saveMemory: action((req) => service.saveTeachingMemory(req.user.id, req.params.enrollmentId, req.body)),
+  closeSession: action((req) => service.closeTeachingSession(req.user.id, req.params.enrollmentId, req.body), 201),
   cancelInvite: action((req) => service.cancelLinkInvitation(
     req.user.id, req.params.profileId
   )),

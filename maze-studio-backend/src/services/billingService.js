@@ -166,6 +166,21 @@ async function getUserBilling(userId) {
     throw error;
   }
 
+  let paymentMethods = [];
+  let paymentHistory = [];
+  if (billing.stripe_customer_id) {
+    const [customer, methods, charges] = await Promise.all([
+      stripe.customers.retrieve(billing.stripe_customer_id),
+      stripe.paymentMethods.list({ customer: billing.stripe_customer_id, type: "card", limit: 20 }),
+      stripe.charges.list({ customer: billing.stripe_customer_id, limit: 50 }),
+    ]);
+    const defaultMethodId = typeof customer.invoice_settings?.default_payment_method === "string"
+      ? customer.invoice_settings.default_payment_method
+      : customer.invoice_settings?.default_payment_method?.id;
+    paymentMethods = methods.data.map(method => ({id:method.id,brand:method.card?.brand,last4:method.card?.last4,expMonth:method.card?.exp_month,expYear:method.card?.exp_year,isDefault:method.id===defaultMethodId}));
+    paymentHistory = charges.data.map(charge => ({id:charge.id,amount:charge.amount,currency:String(charge.currency||"USD").toUpperCase(),status:charge.refunded?"REFUNDED":charge.status?.toUpperCase(),createdAt:new Date(charge.created*1000),description:charge.description||charge.billing_details?.name||"Maze Studio purchase",receiptUrl:charge.receipt_url||null}));
+  }
+
   return {
     accountStatus: billing.account_status,
 
@@ -212,6 +227,8 @@ async function getUserBilling(userId) {
           isDefault: billing.is_default,
         }
       : null,
+    paymentMethods,
+    paymentHistory,
   };
 }
 

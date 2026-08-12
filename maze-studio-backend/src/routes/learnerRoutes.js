@@ -2,6 +2,7 @@ const express = require("express");
 const authMiddleware = require("../middlewares/authMiddleware");
 const learnerController = require("../controllers/learnerController");
 const challengeController = require("../controllers/challengeController");
+const blockAssetUpload = require("../middlewares/blockAssetUploadMiddleware");
 
 const router = express.Router();
 
@@ -23,6 +24,7 @@ router.post(
   "/challenges/:challengeId/attempts",
   challengeController.learnerSubmit
 );
+router.post("/challenges/:challengeId/speaking-upload", blockAssetUpload.single("file"), challengeController.learnerSpeakingUpload);
 router.get(
   "/challenges/:challengeId/attempts",
   challengeController.learnerAttempts

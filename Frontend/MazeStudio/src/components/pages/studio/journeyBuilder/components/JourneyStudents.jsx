@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { apiRequest } from "../../../../../api/api";
 import "./JourneyStudents.css";
 
@@ -10,6 +11,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function JourneyStudents({ journeyId }) {
+    const navigate = useNavigate();
     const [enrollments, setEnrollments] = useState([]);
     const [email, setEmail] = useState("");
     const [addMode, setAddMode] = useState("MANAGED");
@@ -18,6 +20,7 @@ export default function JourneyStudents({ journeyId }) {
     });
     const [linkUrl, setLinkUrl] = useState("");
     const [progressPanel, setProgressPanel] = useState(null);
+    const [memorySaving, setMemorySaving] = useState(false);
     const [linkPanel, setLinkPanel] = useState(null);
     const [linkEmail, setLinkEmail] = useState("");
 
@@ -215,12 +218,42 @@ export default function JourneyStudents({ journeyId }) {
         } catch (err) { setError(err.message || "Could not cancel the invitation."); }
     }
 
-    async function openProgress(enrollment) {
+    async function openProgress(enrollment) { // eslint-disable-line no-unused-vars
         try {
             setError("");
-            const data = await apiRequest(`/enrollments/${enrollment.id}/managed-progress`);
-            setProgressPanel({ enrollment, steps: data.steps || [] });
+            const [data, teaching] = await Promise.all([
+                apiRequest(`/enrollments/${enrollment.id}/managed-progress`),
+                apiRequest(`/enrollments/${enrollment.id}/teaching-memory`),
+            ]);
+            const saved = teaching.memory || {};
+            setProgressPanel({ enrollment, steps: data.steps || [], teachingSteps: teaching.steps || [], history: teaching.history || [], memory: {
+                currentStepId: saved.current_step_id || "", currentBlockId: saved.current_block_id || "",
+                learningStatus: saved.learning_status || "IN_PROGRESS", strengths: saved.strengths || "",
+                needsReview: saved.needs_review || "", homework: saved.homework || "", nextTopic: saved.next_topic || "",
+                privateNote: saved.private_note || "", summary: "",
+            }});
         } catch (err) { setError(err.message || "Could not load Student progress."); }
+    }
+
+    function updateMemory(field, value) {
+        setProgressPanel((current)=>({...current,memory:{...current.memory,[field]:value,...(field==="currentStepId"?{currentBlockId:""}:{})}}));
+    }
+
+    async function persistMemory(closeSession = false) {
+        if (!progressPanel) return;
+        setMemorySaving(true); setError("");
+        try {
+            const endpoint = closeSession ? "session-notes" : "teaching-memory";
+            const result = await apiRequest(`/enrollments/${progressPanel.enrollment.id}/${endpoint}`, {
+                method: closeSession ? "POST" : "PUT", body: JSON.stringify(progressPanel.memory),
+            });
+            if (closeSession) {
+                const selected = progressPanel.teachingSteps.find((item)=>item.id===progressPanel.memory.currentStepId);
+                setProgressPanel((current)=>({...current,history:[{...result.note,step_title:selected?.title},...current.history],memory:{...current.memory,summary:""}}));
+                setMessage("Session closed. Your notes are ready for the next class.");
+            } else setMessage("Teaching memory saved.");
+        } catch (err) { setError(err.message || "Could not save the teaching memory."); }
+        finally { setMemorySaving(false); }
     }
 
     async function recordProgress(stepId, status) {
@@ -603,7 +636,7 @@ export default function JourneyStudents({ journeyId }) {
                                             changeStatus
                                         }
                                         onCreateLink={openLinkPanel}
-                                        onOpenProgress={openProgress}
+                                        onOpenPortal={(item)=>navigate(`/studio/students/${item.id}`)}
                                     />
                                 )
                             )}
@@ -612,12 +645,28 @@ export default function JourneyStudents({ journeyId }) {
                 </div>
             )}
             {progressPanel && <div className="journey_progress_modal_backdrop" onMouseDown={(event)=>event.target===event.currentTarget&&setProgressPanel(null)}>
-                <section className="journey_progress_modal">
-                    <header><div><span>Teacher recorded progress</span><h3>{getStudentName(progressPanel.enrollment)}</h3></div><button type="button" onClick={()=>setProgressPanel(null)} aria-label="Close"><i className="fa-solid fa-xmark"/></button></header>
-                    <p>Use this when lessons happen outside Maze Studio. These records remain attached when the Student links an account.</p>
+                <section className="journey_progress_modal teaching_memory_modal">
+                    <header><div><span>Teaching memory</span><h3>{getStudentName(progressPanel.enrollment)}</h3><p>Pick up the next class exactly where you stopped.</p></div><button type="button" onClick={()=>setProgressPanel(null)} aria-label="Close"><i className="fa-solid fa-xmark"/></button></header>
+                    <div className="teaching_memory_marker">
+                        <div><i className="fa-solid fa-location-dot"/><span><small>Continue from</small><strong>{progressPanel.teachingSteps.find(item=>item.id===progressPanel.memory.currentStepId)?.title || "Choose the current Step"}</strong></span></div>
+                        <label>Status<select value={progressPanel.memory.learningStatus} onChange={(event)=>updateMemory("learningStatus",event.target.value)}><option value="IN_PROGRESS">In progress</option><option value="NEEDS_REVIEW">Needs review</option><option value="READY_TO_ADVANCE">Ready to advance</option><option value="PAUSED">Paused</option></select></label>
+                        <label>Current Step<select value={progressPanel.memory.currentStepId} onChange={(event)=>updateMemory("currentStepId",event.target.value)}><option value="">Select a Step</option>{progressPanel.teachingSteps.map(step=><option key={step.id} value={step.id}>{step.stage_title} · {step.title}</option>)}</select></label>
+                        <label>Exact Block<select disabled={!progressPanel.memory.currentStepId} value={progressPanel.memory.currentBlockId} onChange={(event)=>updateMemory("currentBlockId",event.target.value)}><option value="">Beginning / general</option>{(progressPanel.teachingSteps.find(item=>item.id===progressPanel.memory.currentStepId)?.blocks||[]).map((block,index)=><option key={block.id} value={block.id}>{index+1}. {String(block.label||block.type).slice(0,80)}</option>)}</select></label>
+                    </div>
+                    <div className="teaching_memory_fields">
+                        <label>What went well<textarea value={progressPanel.memory.strengths} onChange={(event)=>updateMemory("strengths",event.target.value)} placeholder="Concepts the Student understood well…"/></label>
+                        <label>Needs reinforcement<textarea value={progressPanel.memory.needsReview} onChange={(event)=>updateMemory("needsReview",event.target.value)} placeholder="Mistakes, doubts or topics to revisit…"/></label>
+                        <label>Homework / pending work<textarea value={progressPanel.memory.homework} onChange={(event)=>updateMemory("homework",event.target.value)} placeholder="Challenge, exercise or practice assigned…"/></label>
+                        <label>Next class goal<textarea value={progressPanel.memory.nextTopic} onChange={(event)=>updateMemory("nextTopic",event.target.value)} placeholder="What should happen next…"/></label>
+                        <label className="wide">Private teacher note<textarea value={progressPanel.memory.privateNote} onChange={(event)=>updateMemory("privateNote",event.target.value)} placeholder="Only educators can see this note."/></label>
+                    </div>
+                    <div className="teaching_memory_actions"><button type="button" disabled={memorySaving} onClick={()=>persistMemory(false)}><i className="fa-solid fa-floppy-disk"/> Save checkpoint</button></div>
+                    <div className="teaching_session_close"><span><small>End of class</small><strong>Save a permanent session record</strong></span><textarea value={progressPanel.memory.summary} onChange={(event)=>updateMemory("summary",event.target.value)} placeholder="Briefly summarize what happened in this class…"/><button type="button" disabled={memorySaving||!progressPanel.memory.summary.trim()} onClick={()=>persistMemory(true)}><i className="fa-solid fa-flag-checkered"/> Close session</button></div>
+                    {progressPanel.history.length>0&&<div className="teaching_history"><h4>Recent sessions</h4>{progressPanel.history.map(note=><article key={note.id}><span><i className="fa-regular fa-calendar"/>{new Date(note.occurred_at).toLocaleDateString(undefined,{dateStyle:"medium"})}</span><strong>{note.step_title||"General session"}</strong><p>{note.summary||note.next_topic||"Session checkpoint saved"}</p>{note.next_topic&&<small>Next: {note.next_topic}</small>}</article>)}</div>}
+                    <details className="teaching_progress_details"><summary>Manage course progress</summary><p>Use this when lessons happen outside Maze Studio. These records remain attached if the Student links an account.</p>
                     <div className="journey_progress_steps">
                         {progressPanel.steps.map((step)=><div key={step.id}><span><small>{step.stage_title}</small><strong>{step.title}</strong></span><select value={step.progress_status} onChange={(event)=>recordProgress(step.id,event.target.value)}><option value="NOT_STARTED">Not started</option><option value="IN_PROGRESS">In progress</option><option value="COMPLETED">Completed</option></select></div>)}
-                    </div>
+                    </div></details>
                 </section>
             </div>}
             {linkPanel && <div className="journey_progress_modal_backdrop" onMouseDown={(event)=>event.target===event.currentTarget&&setLinkPanel(null)}>
@@ -665,7 +714,7 @@ function StudentRow({
     updating,
     onChangeStatus,
     onCreateLink,
-    onOpenProgress,
+    onOpenPortal,
 }) {
     const name = getStudentName(enrollment);
     const initials = getInitials(enrollment);
@@ -739,7 +788,7 @@ function StudentRow({
                         </option>
                     ))}
                 </select>
-                <button type="button" onClick={()=>onOpenProgress(enrollment)}><i className="fa-solid fa-chart-line"/> Progress</button>
+                <button type="button" className="student_portal_button" onClick={()=>onOpenPortal(enrollment)}><i className="fa-solid fa-arrow-up-right-from-square"/> Open Student portal</button>
                 {!enrollment.linked_user_id && <button type="button" onClick={()=>onCreateLink(enrollment)}><i className="fa-solid fa-link"/> {enrollment.learner_profile_status==="INVITED"?"Change email / resend":"Link account"}</button>}
                 </div>
             </td>

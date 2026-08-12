@@ -654,6 +654,7 @@ button.student_primary_link:disabled {
     border-color: var(--student-primary);
     box-shadow: 0 0 0 3px var(--student-primary-soft);
 }
+.student_settings_form>button{grid-column:1/-1;justify-self:start;padding:11px 16px;border:0;border-radius:11px;background:var(--student-primary);color:#fff;font-weight:800;cursor:pointer}.student_settings_form>.student_settings_note{align-self:center;margin:0;color:var(--student-muted)}
 
 .student_security_panel {
     position: relative;

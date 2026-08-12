@@ -218,7 +218,7 @@ async function findUserIdBySubscriptionId(
 
   return result.rows[0]?.user_id || null;
 }
-async function updateOfferingSubscription(stripeSubscriptionId,status,cancelAtPeriodEnd,currentPeriodEnd){await pool.query("UPDATE offering_subscriptions SET status=$1,cancel_at_period_end=$2,current_period_end=$3,updated_at=NOW() WHERE stripe_subscription_id=$4",[String(status).toUpperCase(),cancelAtPeriodEnd,currentPeriodEnd,stripeSubscriptionId]);}
+async function updateOfferingSubscription(stripeSubscriptionId,status,cancelAtPeriodEnd,currentPeriodEnd){const normalized=String(status).toUpperCase();const client=await pool.connect();try{await client.query("BEGIN");const subscription=(await client.query(`UPDATE offering_subscriptions SET status=$1,cancel_at_period_end=$2,current_period_end=$3,updated_at=NOW() WHERE stripe_subscription_id=$4 RETURNING offering_order_id`,[normalized,cancelAtPeriodEnd,currentPeriodEnd,stripeSubscriptionId])).rows[0];if(subscription){const active=["ACTIVE","TRIALING"].includes(normalized);await client.query(`UPDATE journey_enrollments enrollment SET status=CASE WHEN $2 THEN 'ACTIVE' ELSE 'SUSPENDED' END,updated_at=NOW() FROM offering_orders orders WHERE orders.id=$1::uuid AND enrollment.id=orders.enrollment_id AND enrollment.access_policy='WHILE_ACTIVE'`,[subscription.offering_order_id,active]);if(!active)await client.query(`UPDATE calendar_events event SET status='CANCELLED',updated_at=NOW() WHERE event.metadata->>'offeringOrderId'=$1 AND event.starts_at>NOW()`,[subscription.offering_order_id]);}await client.query("COMMIT")}catch(error){await client.query("ROLLBACK");throw error}finally{client.release()}}
 
 module.exports = {
   activateEducator,

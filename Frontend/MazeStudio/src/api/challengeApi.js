@@ -56,6 +56,17 @@ export const getAssignedChallenges = (journeyId) =>
   apiRequest(`/learner/challenges${journeyId ? `?journeyId=${journeyId}` : ""}`);
 export const submitLearnerChallenge = (id, answers) =>
   apiRequest(`/learner/challenges/${id}/attempts`, { method: "POST", body: JSON.stringify({ answers }) });
+export const uploadSpeakingResponse = (id, file) => {
+  const body = new FormData();
+  body.append("file", file, file.name || `speaking-${Date.now()}.webm`);
+  return apiRequest(`/learner/challenges/${id}/speaking-upload`, { method: "POST", body });
+};
+export const uploadPrivateSpeakingResponse = (token, sessionToken, file) => {
+  const body = new FormData();
+  body.append("sessionToken", sessionToken);
+  body.append("file", file, file.name || `speaking-${Date.now()}.webm`);
+  return apiRequest(`/public/challenges/private/${token}/speaking-upload`, { method: "POST", body });
+};
 export const getPrivateChallenge = (token) => apiRequest(`/public/challenges/private/${token}`);
 export const startPrivateSession = (token, body) =>
   apiRequest(`/public/challenges/private/${token}/session`, { method: "POST", body: JSON.stringify(body) });

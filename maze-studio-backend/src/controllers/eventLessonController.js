@@ -1,0 +1,1 @@
+const service=require("../services/eventLessonService");async function get(req,res,next){try{res.json(await service.get(req.user.id,req.params.eventId))}catch(error){next(error)}}async function save(req,res,next){try{res.json(await service.save(req.user.id,req.params.eventId,req.body))}catch(error){next(error)}}module.exports={get,save};

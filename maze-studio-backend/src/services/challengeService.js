@@ -6,10 +6,10 @@ const notificationService = require("./notificationService");
 
 const QUESTION_BLOCK_TYPES = new Set([
   "SINGLE_CHOICE", "MULTIPLE_CHOICE", "TRUE_FALSE", "FILL_BLANK",
-  "SHORT_ANSWER", "LONG_ANSWER", "FILE_UPLOAD",
+  "SHORT_ANSWER", "LONG_ANSWER", "FILE_UPLOAD", "SPEAKING",
 ]);
 const CONTENT_BLOCK_TYPES = new Set([
-  "HEADING", "TEXT", "IMAGE", "VIDEO", "CODE", "QUOTE", "CALLOUT",
+  "HEADING", "TEXT", "IMAGE", "VIDEO", "AUDIO", "EQUATION", "WHITEBOARD", "CODE", "QUOTE", "CALLOUT",
   "DIVIDER", "TABLE", "FILE", "PDF",
 ]);
 
@@ -290,7 +290,7 @@ async function reorderChallengeBlocks(userId, challengeId, blockIds = []) {
 
 async function uploadChallengeBlockAsset(userId, blockId, file) {
   const block = await assertBlockOwner(userId, blockId);
-  if (!["IMAGE", "FILE", "PDF"].includes(block.block_type)) throw httpError("This block does not accept files", 400);
+  if (!["IMAGE", "VIDEO", "AUDIO", "FILE", "PDF"].includes(block.block_type)) throw httpError("This block does not accept files", 400);
   const previousKey = block.content?.objectKey;
   const uploaded = await storageService.uploadFile({
     file, folder: "challenge-blocks", ownerId: block.challenge_id,
@@ -615,6 +615,24 @@ async function submitLearnerAttempt(userId, challengeId, answers) {
   finally { client.release(); }
 }
 
+async function uploadSpeakingResponse(userId, challengeId, file) {
+  if (!file) throw httpError("Audio recording is required", 400);
+  if (!String(file.mimetype || "").startsWith("audio/")) throw httpError("Only audio recordings are accepted", 400);
+  const challenge = await learnerAccess(userId, challengeId);
+  const uploaded = await storageService.uploadFile({ file, folder: "challenge-speaking", ownerId: userId });
+  return { url: uploaded.publicUrl, objectKey: uploaded.objectKey, name: uploaded.originalName,
+    mimeType: uploaded.mimeType, size: uploaded.size, challengeId: challenge.id };
+}
+
+async function uploadPrivateSpeakingResponse(token, sessionToken, file) {
+  if (!file) throw httpError("Audio recording is required", 400);
+  if (!String(file.mimetype || "").startsWith("audio/")) throw httpError("Only audio recordings are accepted", 400);
+  const { session } = await privateSession(token, sessionToken);
+  const uploaded = await storageService.uploadFile({ file, folder: "challenge-speaking-private", ownerId: session.id });
+  return { url: uploaded.publicUrl, objectKey: uploaded.objectKey, name: uploaded.originalName,
+    mimeType: uploaded.mimeType, size: uploaded.size };
+}
+
 async function learnerAttempts(userId, challengeId) {
   const challenge = await learnerAccess(userId, challengeId);
   return (await pool.query(
@@ -881,10 +899,10 @@ module.exports = {
   createChallenge, listJourneyChallenges, getEducatorChallenge, updateChallenge, archiveChallenge, attachStep, detachStep,
   listAssignments, listAssignableLearners, assignLearner, revokeAssignment,
   listAssignedChallenges,
-  getLearnerChallenge, submitLearnerAttempt, learnerAttempts, learnerAttempt,
+  getLearnerChallenge, submitLearnerAttempt, uploadSpeakingResponse, learnerAttempts, learnerAttempt,
   educatorAttempts, educatorAttempt, reviewAttempt, createPrivateLink, listPrivateLinks,
   updatePrivateLink, revokePrivateLink, getPrivateMetadata, createPrivateSession,
-  submitPrivateAttempt, privateAttempt,
+  submitPrivateAttempt, privateAttempt, uploadPrivateSpeakingResponse,
   createChallengeBlock, updateChallengeBlock, deleteChallengeBlock,
   reorderChallengeBlocks, uploadChallengeBlockAsset,
 };

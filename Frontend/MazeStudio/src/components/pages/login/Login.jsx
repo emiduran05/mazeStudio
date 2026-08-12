@@ -152,7 +152,7 @@ export default function Login() {
                     </form>
 
                     <p className="login_footer_text">
-                        New to Maze Studio? <Link to="/register">Create an account</Link>
+                        New to Maze Studio? <Link to={searchParams.get("returnTo")?`/register?returnTo=${encodeURIComponent(searchParams.get("returnTo"))}`:"/register"}>Create an account</Link>
                     </p>
                 </div>
             </div>

@@ -1,19 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { apiRequest } from "../../../api/api";
 import "./Marketplace.css";
 import "./EducatorProfileLink.css";
+import "./JourneyImageFixes.css";
 
 const types = [
     ["", "All formats"], ["SELF_PACED", "Self-paced"], ["COHORT", "Group courses"],
-    ["WEBINAR", "Webinars"], ["HYBRID", "Hybrid"], ["ONE_TO_ONE", "1:1"],
+    ["ONE_TO_ONE", "1:1 classes"],
 ];
 
 const money = (amount, currency) => amount === 0 ? "Free" : new Intl.NumberFormat(undefined, { style: "currency", currency }).format(amount / 100);
 
 export default function Marketplace() {
+    const [params,setParams] = useSearchParams();
     const [items, setItems] = useState([]);
-    const [search, setSearch] = useState("");
+    const [search, setSearch] = useState(params.get("search")||"");
     const [type, setType] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -27,9 +29,10 @@ export default function Marketplace() {
         }, 250);
         return () => clearTimeout(timer);
     }, [search, type]);
+    useEffect(()=>{const next=new URLSearchParams();if(search)next.set("search",search);if(type)next.set("type",type);setParams(next,{replace:true})},[search,type,setParams]);
     const countLabel = useMemo(() => `${items.length} ${items.length === 1 ? "experience" : "experiences"}`, [items.length]);
     return <div className="student_page_stack marketplace_page">
-        <section className="marketplace_hero"><div><span className="student_section_kicker">Learn your way</span><h2>Find an experience built for your goals.</h2><p>Learn independently, join a live group, attend a focused webinar or work directly with an educator.</p></div><div className="marketplace_hero_icon"><i className="fa-solid fa-compass" /></div></section>
+        <section className="marketplace_hero"><div><span className="student_section_kicker">Learn your way</span><h2>Find an experience built for your goals.</h2><p>Learn independently, join a scheduled Cohort or work directly with an educator in private classes.</p></div><div className="marketplace_hero_icon"><i className="fa-solid fa-compass" /></div></section>
         <section className="marketplace_toolbar"><div className="marketplace_search"><i className="fa-solid fa-magnifying-glass"/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search courses or educators"/></div><label className="marketplace_filter"><span>Format</span><select value={type} onChange={e=>setType(e.target.value)}>{types.map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label></section>
         <div className="marketplace_results_header"><div><span className="student_section_kicker">Explore</span><h3>Available Learning Journeys</h3></div><span>{countLabel}</span></div>
         {loading ? <div className="marketplace_status"><i className="fa-solid fa-spinner fa-spin"/> Finding experiences…</div> : error ? <div className="marketplace_status error">{error}</div> : items.length ? <section className="marketplace_grid">{items.map(item=><article className="marketplace_card" key={item.id}>

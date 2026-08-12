@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import EquationBlock from "../../../../contentRenderer/EquationBlock";
+import RichTextEditor from "./RichTextEditor";
 import {
     uploadBlockAsset,
     deleteBlockAsset,
+    uploadInlineBlockImage,
 } from "../../../../../api/blockAssetApi";
 
 
@@ -15,6 +19,7 @@ export default function SortableBlock({
     availableChallenges = [],
 
 }) {
+    const navigate = useNavigate();
 
 
     const [uploadingAsset, setUploadingAsset] =
@@ -140,6 +145,13 @@ export default function SortableBlock({
 
     function renderEditor() {
         switch (block.block_type) {
+            case "CANVAS": {
+                const pageCount = draftContent.document?.pages?.length || 0;
+                return <div className="canvas_block_editor_card">
+                    <div className="canvas_block_editor_visual"><i className="fa-solid fa-object-group"/><span>{pageCount || "—"}</span><small>{pageCount === 1 ? "página" : "páginas"}</small></div>
+                    <div><span className="canvas_block_kicker">PRESENTACIÓN VISUAL</span><h3>{draftContent.document?.title || "Nueva presentación Canvas"}</h3><p>Diseña páginas libremente con texto, imágenes, videos, formas, tablas y plantillas.</p><button type="button" onClick={()=>navigate(`/studio/step/${block.step_id}/canvas/${block.id}`)}><i className="fa-solid fa-pen-ruler"/> Abrir editor Canvas</button></div>
+                </div>;
+            }
             case "HEADING":
                 return (
                     <div className="block_heading_editor">
@@ -171,23 +183,7 @@ export default function SortableBlock({
                 );
 
             case "TEXT":
-                return (
-                    <textarea
-                        className="block_text_editor"
-                        value={
-                            draftContent.text ??
-                            draftContent.html ??
-                            ""
-                        }
-                        onChange={(event) =>
-                            setDraftContent({
-                                text: event.target.value,
-                            })
-                        }
-                        placeholder="Write your content..."
-                        rows={6}
-                    />
-                );
+                return <div className="block_rich_text_editor"><RichTextEditor content={draftContent} onChange={setDraftContent} baseStyle={{fontSize:`${Number(draftSettings.fontSize)||16}px`,color:draftSettings.color||undefined,backgroundColor:draftSettings.backgroundColor||undefined,fontFamily:draftSettings.fontFamily||undefined,fontWeight:draftSettings.fontWeight||undefined,textAlign:draftSettings.textAlign||undefined,lineHeight:draftSettings.lineHeight||undefined,letterSpacing:`${Number(draftSettings.letterSpacing)||0}px`}}/><div className="block_text_style_grid"><label>Block size<input type="number" min="10" max="72" value={draftSettings.fontSize||16} onChange={event=>updateSettings("fontSize",Number(event.target.value))}/></label><label>Block text color<input type="color" value={draftSettings.color||"#111827"} onChange={event=>updateSettings("color",event.target.value)}/></label><label>Block background<input type="color" value={draftSettings.backgroundColor||"#ffffff"} onChange={event=>updateSettings("backgroundColor",event.target.value)}/></label><label>Font<select value={draftSettings.fontFamily||"inherit"} onChange={event=>updateSettings("fontFamily",event.target.value)}><option value="inherit">Theme default</option><option value="Arial, sans-serif">Arial</option><option value="Georgia, serif">Georgia</option><option value="'Courier New', monospace">Monospace</option><option value="'Trebuchet MS', sans-serif">Trebuchet</option></select></label><label>Weight<select value={draftSettings.fontWeight||400} onChange={event=>updateSettings("fontWeight",Number(event.target.value))}><option value="300">Light</option><option value="400">Regular</option><option value="600">Semibold</option><option value="700">Bold</option><option value="900">Black</option></select></label><label>Align<select value={draftSettings.textAlign||"left"} onChange={event=>updateSettings("textAlign",event.target.value)}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option><option value="justify">Justify</option></select></label><label>Line height<input type="number" min="1" max="3" step=".1" value={draftSettings.lineHeight||1.7} onChange={event=>updateSettings("lineHeight",Number(event.target.value))}/></label><label>Letter spacing<input type="number" min="-2" max="12" step=".25" value={draftSettings.letterSpacing||0} onChange={event=>updateSettings("letterSpacing",Number(event.target.value))}/></label><label>Width<select value={draftSettings.maxWidth||"100%"} onChange={event=>updateSettings("maxWidth",event.target.value)}><option value="100%">Full</option><option value="900px">Wide</option><option value="720px">Reading</option><option value="560px">Narrow</option></select></label><button type="button" onClick={()=>setDraftSettings({fontSize:16,color:"",backgroundColor:"",fontFamily:"inherit",fontWeight:400,textAlign:"left",lineHeight:1.7,letterSpacing:0,maxWidth:"100%"})}>Reset block style</button></div></div>;
 
             case "QUOTE":
                 return (
@@ -317,8 +313,9 @@ export default function SortableBlock({
                 );
 
             case "IMAGE":
-                return (
-                    <div className="block_asset_editor">
+                  return (
+                      <div className="block_asset_editor">
+                          {draftContent.placeholderPrompt&&!draftContent.url&&<div className="block_asset_error"><i className="fa-solid fa-wand-magic-sparkles"/> Suggested visual: {draftContent.placeholderPrompt}</div>}
                         {draftContent.url ? (
                             <figure className="block_image_preview">
                                 <img
@@ -353,7 +350,7 @@ export default function SortableBlock({
                                     JPG, PNG, WEBP or GIF · Maximum 20 MB
                                 </span>
 
-                                <input
+                          <label className="block_remote_image_url">Or paste an image URL<input type="url" value={draftContent.objectKey?"":draftContent.url||""} onChange={event=>setDraftContent(current=>({...current,url:event.target.value,objectKey:"",name:"",mimeType:""}))} placeholder="https://example.com/image.jpg"/></label><input
                                     type="file"
                                     accept="image/jpeg,image/png,image/webp,image/gif"
                                     onChange={handleAssetSelection}
@@ -393,6 +390,9 @@ export default function SortableBlock({
                     </div>
                 );
 
+            case "AUDIO":
+                return <div className="block_asset_editor">{draftContent.url&&<audio controls src={draftContent.url}/>}<label className="block_asset_dropzone"><i className="fa-solid fa-volume-high"/><strong>{uploadingAsset?"Uploading…":draftContent.url?"Replace audio":"Upload audio"}</strong><span>MP3, WAV, OGG or WebM · maximum 100 MB</span><input type="file" accept="audio/*" onChange={handleAssetSelection} disabled={uploadingAsset} hidden/></label>{draftContent.url&&<button type="button" onClick={handleRemoveAsset}>Remove audio</button>}{assetError&&<div className="block_asset_error">{assetError}</div>}</div>;
+
             case "VIDEO":
                 return (
                     <div className="block_url_editor">
@@ -419,6 +419,9 @@ export default function SortableBlock({
                             }
                             placeholder="Optional caption"
                         />
+                        <label className="block_asset_dropzone"><i className="fa-solid fa-cloud-arrow-up"/><strong>{uploadingAsset?"Uploading…":draftContent.objectKey?"Replace uploaded video":"Or upload a video"}</strong><span>MP4, WebM or MOV · maximum 100 MB</span><input type="file" accept="video/*" onChange={handleAssetSelection} disabled={uploadingAsset} hidden/></label>
+                        {draftContent.objectKey&&<button type="button" onClick={handleRemoveAsset}>Remove uploaded video</button>}
+                        {assetError&&<div className="block_asset_error">{assetError}</div>}
                     </div>
                 );
 
@@ -513,6 +516,28 @@ export default function SortableBlock({
                 );
             }
 
+
+            case "WHITEBOARD":
+                return <div className="block_whiteboard_editor"><label>Title<input value={draftContent.title||""} onChange={event=>updateContent("title",event.target.value)} placeholder="Whiteboard activity"/></label><label>Instructions<textarea value={draftContent.prompt||""} onChange={event=>updateContent("prompt",event.target.value)} placeholder="What should the learner solve or draw?"/></label><div><label>Height<input type="number" min="240" max="900" value={draftSettings.height||420} onChange={event=>updateSettings("height",Number(event.target.value))}/></label><label>Background<select value={draftSettings.background||"GRID"} onChange={event=>updateSettings("background",event.target.value)}><option value="GRID">Grid</option><option value="DOTS">Dots</option><option value="PLAIN">Plain</option></select></label><label><input type="checkbox" checked={draftSettings.allowLearnerClear!==false} onChange={event=>updateSettings("allowLearnerClear",event.target.checked)}/> Learner can clear</label></div></div>;
+
+            case "EQUATION":
+                return <EquationEditor content={draftContent} settings={draftSettings} updateContent={updateContent} updateSettings={updateSettings}/>;
+
+            case "BUTTON":
+                return <div className="block_link_editor"><label>Button label<input value={draftContent.label||""} onChange={event=>updateContent("label",event.target.value)} placeholder="Open resource"/></label><label>Destination URL<input type="url" value={draftContent.url||""} onChange={event=>updateContent("url",event.target.value)} placeholder="https://example.com"/></label><div><label>Style<select value={draftSettings.variant||"primary"} onChange={event=>updateSettings("variant",event.target.value)}><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="outline">Outline</option></select></label><label>Alignment<select value={draftSettings.alignment||"left"} onChange={event=>updateSettings("alignment",event.target.value)}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label><label className="block_link_checkbox"><input type="checkbox" checked={draftSettings.openInNewTab!==false} onChange={event=>updateSettings("openInNewTab",event.target.checked)}/> Open in new tab</label></div></div>;
+
+            case "EMBED":
+                return <div className="block_embed_editor"><label>Resource URL<input type="url" value={draftContent.url||""} onChange={event=>updateContent("url",event.target.value)} placeholder="https://…"/></label><label>Accessible title<input value={draftContent.title||""} onChange={event=>updateContent("title",event.target.value)} placeholder="Interactive resource"/></label><label>Height<input type="number" min="240" max="900" value={draftSettings.height||500} onChange={event=>updateSettings("height",Number(event.target.value))}/></label><p><i className="fa-solid fa-circle-info"/> The website must allow embedding. Use this for simulations, maps, forms or interactive tools.</p></div>;
+
+            case "CHECKLIST": {
+                const items=draftContent.items||[];
+                return <div className="block_collection_editor"><label>Checklist title<input value={draftContent.title||""} onChange={event=>updateContent("title",event.target.value)}/></label><div>{items.map((item,index)=><div className="block_collection_row" key={item.id}><i className="fa-regular fa-square-check"/><input value={item.text||""} onChange={event=>setDraftContent(current=>({...current,items:items.map((entry,position)=>position===index?{...entry,text:event.target.value}:entry)}))} placeholder={`Item ${index+1}`}/><button type="button" onClick={()=>setDraftContent(current=>({...current,items:items.filter((_,position)=>position!==index)}))} aria-label="Remove item"><i className="fa-solid fa-xmark"/></button></div>)}</div><button type="button" className="block_collection_add" onClick={()=>setDraftContent(current=>({...current,items:[...(current.items||[]),{id:crypto.randomUUID(),text:""}]}))}><i className="fa-solid fa-plus"/> Add item</button></div>;
+            }
+
+            case "FLASHCARDS": {
+                const cards=draftContent.cards||[];
+                return <div className="block_collection_editor flashcard_editor"><label>Deck title<input value={draftContent.title||""} onChange={event=>updateContent("title",event.target.value)}/></label><div>{cards.map((card,index)=><div className="flashcard_editor_row" key={card.id}><span>{index+1}</span><label>Front<input value={card.front||""} onChange={event=>setDraftContent(current=>({...current,cards:cards.map((entry,position)=>position===index?{...entry,front:event.target.value}:entry)}))} placeholder="Word or concept"/></label><label>Back<input value={card.back||""} onChange={event=>setDraftContent(current=>({...current,cards:cards.map((entry,position)=>position===index?{...entry,back:event.target.value}:entry)}))} placeholder="Definition or translation"/></label><button type="button" onClick={()=>setDraftContent(current=>({...current,cards:cards.filter((_,position)=>position!==index)}))} aria-label="Remove card"><i className="fa-solid fa-trash"/></button></div>)}</div><button type="button" className="block_collection_add" onClick={()=>setDraftContent(current=>({...current,cards:[...(current.cards||[]),{id:crypto.randomUUID(),front:"",back:""}]}))}><i className="fa-solid fa-plus"/> Add card</button></div>;
+            }
 
             case "TABLE": {
                 const rows = Array.isArray(draftContent.rows)
@@ -651,6 +676,8 @@ export default function SortableBlock({
                                                                 : "Cell"
                                                         }
                                                     />
+                                                    {cell.imageUrl&&<img className="block_table_cell_image" src={cell.imageUrl} alt={cell.alt||""}/>}<button type="button" className="block_table_image_button" title="Add or change cell image" onClick={()=>{const url=window.prompt("Public image URL",cell.imageUrl||"");if(url===null)return;setDraftContent(current=>({...current,rows:(current.rows||[]).map((row,rIndex)=>row.map((entry,cIndex)=>rIndex===rowIndex&&cIndex===columnIndex?{...entry,imageUrl:/^https?:\/\//i.test(url)?url:"",alt:entry.alt||""}:entry))}))}}><i className="fa-solid fa-image"/></button>
+                                                    {cell.imageUrl&&<img className="block_table_cell_image" src={cell.imageUrl} alt={cell.alt||""}/>}<button type="button" className="block_table_image_button" title="Add or change cell image" onClick={()=>{const url=window.prompt("Public image URL",cell.imageUrl||"");if(url===null)return;setDraftContent(current=>({...current,rows:(current.rows||[]).map((row,rIndex)=>row.map((entry,cIndex)=>rIndex===rowIndex&&cIndex===columnIndex?{...entry,imageUrl:/^https?:\/\//i.test(url)?url:"",alt:entry.alt||""}:entry))}))}}><i className="fa-solid fa-image"/></button>
                                                 </td>
                                             ))}
 
@@ -1127,6 +1154,9 @@ export default function SortableBlock({
                 )
                     ? draftContent.acceptedAnswers
                     : [];
+                const wordBank = Array.isArray(draftContent.wordBank)
+                    ? draftContent.wordBank
+                    : [];
 
                 return (
                     <div className="block_exercise_editor">
@@ -1197,6 +1227,22 @@ export default function SortableBlock({
                             Add accepted answer
                         </button>
 
+                        <div className="block_form_group">
+                            <label>Word bank</label>
+                            <textarea
+                                value={wordBank.join("\n")}
+                                onChange={(event) =>
+                                    updateContent(
+                                        "wordBank",
+                                        event.target.value.split("\n")
+                                    )
+                                }
+                                placeholder={"One option per line\nInclude correct answers and distractors"}
+                                rows={5}
+                            />
+                            <small>Include every correct answer plus plausible alternatives. Learners can tap an option to fill the next blank.</small>
+                        </div>
+
                         <div className="block_exercise_settings">
                             <label>
                                 <input
@@ -1245,6 +1291,19 @@ export default function SortableBlock({
                         </div>
                     </div>
                 );
+            }
+
+            case "CLASSIFICATION": {
+                const categories=Array.isArray(draftContent.categories)?draftContent.categories:[];
+                const items=Array.isArray(draftContent.items)?draftContent.items:[];
+                const patchCategories=(next)=>setDraftContent(current=>({...current,categories:next}));
+                const patchItems=(next)=>setDraftContent(current=>({...current,items:next}));
+                return <div className="block_exercise_editor">
+                    <div className="block_form_group"><label>Instructions</label><input value={draftContent.prompt||""} onChange={event=>updateContent("prompt",event.target.value)} placeholder="Classify each word"/></div>
+                    <div className="block_form_group"><label>Categories</label><div className="block_collection_editor"><div>{categories.map((category,index)=><div className="block_collection_row" key={category.id}><i className="fa-solid fa-tag"/><input value={category.label||""} onChange={event=>patchCategories(categories.map(entry=>entry.id===category.id?{...entry,label:event.target.value}:entry))} placeholder={`Category ${index+1}`}/><button type="button" disabled={categories.length<=2} onClick={()=>{const next=categories.filter(entry=>entry.id!==category.id);patchCategories(next);patchItems(items.map(item=>item.correctCategoryId===category.id?{...item,correctCategoryId:next[0]?.id||""}:item))}}><i className="fa-solid fa-xmark"/></button></div>)}</div><button type="button" className="block_collection_add" onClick={()=>patchCategories([...categories,{id:crypto.randomUUID(),label:""}])}><i className="fa-solid fa-plus"/> Add category</button></div></div>
+                    <div className="block_form_group"><label>Items and correct categories</label><div className="block_matching_list">{items.map((item,index)=><div className="block_matching_row" key={item.id}><input value={item.text||""} onChange={event=>patchItems(items.map(entry=>entry.id===item.id?{...entry,text:event.target.value}:entry))} placeholder={`Item ${index+1}`}/><i className="fa-solid fa-arrow-right"/><select value={item.correctCategoryId||""} onChange={event=>patchItems(items.map(entry=>entry.id===item.id?{...entry,correctCategoryId:event.target.value}:entry))}><option value="">Correct category</option>{categories.map(category=><option key={category.id} value={category.id}>{category.label||"Untitled category"}</option>)}</select><button type="button" disabled={items.length<=1} onClick={()=>patchItems(items.filter(entry=>entry.id!==item.id))}><i className="fa-regular fa-trash-can"/></button></div>)}</div><button type="button" className="block_add_item_button" onClick={()=>patchItems([...items,{id:crypto.randomUUID(),text:"",correctCategoryId:categories[0]?.id||""}])}><i className="fa-solid fa-plus"/> Add item</button></div>
+                    <div className="block_form_group"><label>Explanation</label><textarea value={draftContent.explanation||""} onChange={event=>updateContent("explanation",event.target.value)} placeholder="Explain the classifications after checking" rows={3}/></div>
+                </div>;
             }
 
             case "MATCHING": {
@@ -1308,6 +1367,7 @@ export default function SortableBlock({
                                         }
                                         placeholder={`Item ${index + 1}`}
                                     />
+                                    <button type="button" title="Add left image" onClick={()=>{const url=window.prompt("Left item image URL",pair.leftImageUrl||"");if(url!==null)updatePair(pair.id,{leftImageUrl:url,leftAlt:pair.leftAlt||pair.left||""})}}><i className="fa-regular fa-image"/></button>
                                     <i className="fa-solid fa-arrow-right"></i>
                                     <input
                                         value={pair.right || ""}
@@ -1318,6 +1378,7 @@ export default function SortableBlock({
                                         }
                                         placeholder="Match"
                                     />
+                                    <button type="button" title="Add matching image" onClick={()=>{const url=window.prompt("Matching item image URL",pair.rightImageUrl||"");if(url!==null)updatePair(pair.id,{rightImageUrl:url,rightAlt:pair.rightAlt||pair.right||""})}}><i className="fa-regular fa-image"/></button>
                                     <button
                                         type="button"
                                         onClick={() => removePair(pair.id)}
@@ -1627,6 +1688,7 @@ export default function SortableBlock({
                                     : "fa-check"
                                 }`}
                         ></i>
+                        <span>{saving?"Saving…":"Save changes"}</span>
                     </button>
 
                     <button
@@ -1641,6 +1703,7 @@ export default function SortableBlock({
             </header>
 
             <div className="step_block_body">
+                {!["IMAGE","VIDEO","AUDIO","FILE","PDF","LAYOUT","COLUMN","CANVAS"].includes(block.block_type)&&<InlineImageEditor blockId={block.id} label="Block image (optional)" value={draftContent.media} onChange={media=>updateContent("media",media)}/>} 
                 {renderEditor()}
             </div>
         </article>
@@ -1666,4 +1729,49 @@ function formatFileSize(bytes) {
         size /
         (1024 * 1024)
     ).toFixed(1)} MB`;
+}
+
+function InlineImageEditor({blockId,label="Image (optional)",value,onChange}){
+    const media=value&&typeof value==="object"?value:{};
+    const[uploading,setUploading]=useState(false),[error,setError]=useState("");
+    const[open,setOpen]=useState(Boolean(media.url||media.placeholderPrompt));
+    async function upload(event){const file=event.target.files?.[0];if(!file)return;setUploading(true);setError("");try{const data=await uploadInlineBlockImage(blockId,file);onChange({...media,...data.asset})}catch(uploadError){setError(uploadError.message||"Could not upload image")}finally{setUploading(false);event.target.value=""}}
+    if(!open)return <button type="button" className="block_inline_media_trigger" onClick={()=>setOpen(true)}><i className="fa-regular fa-image"/> Add image</button>;
+    return <div className="block_inline_media_editor">
+        <div><strong><i className="fa-regular fa-image"/> {label}</strong><small>{media.placeholderPrompt||"Add a visual without replacing the text."}</small><button type="button" onClick={()=>{if(!media.url)setOpen(false)}}><i className="fa-solid fa-chevron-up"/> Collapse</button></div>
+        {media.url&&<img src={media.url} alt={media.alt||""}/>} 
+        <label>Image URL<input type="url" value={media.url||""} onChange={event=>onChange({...media,url:event.target.value,objectKey:""})} placeholder="https://example.com/image.jpg"/></label>
+        <label className="block_inline_media_upload"><input type="file" accept="image/jpeg,image/png,image/webp" onChange={upload} hidden/><i className={`fa-solid ${uploading?"fa-spinner fa-spin":"fa-cloud-arrow-up"}`}/>{uploading?"Uploading…":"Upload"}</label>
+        <label>Alt text<input value={media.alt||""} onChange={event=>onChange({...media,alt:event.target.value})} placeholder="Describe the image"/></label>
+        <label>Position<select value={media.position||"above"} onChange={event=>onChange({...media,position:event.target.value})}><option value="above">Above content</option><option value="below">Below content</option></select></label>
+        {media.url&&<button type="button" onClick={()=>onChange({})}><i className="fa-regular fa-trash-can"/> Remove</button>}{error&&<small className="block_asset_error">{error}</small>}
+    </div>;
+}
+
+const EQUATION_TOOLS = [
+    ["x²", "^{2}"], ["xⁿ", "^{}"], ["x₂", "_{}"], ["Fraction", "\\frac{}{}"],
+    ["√", "\\sqrt{}"], ["π", "\\pi"], ["×", "\\times"], ["÷", "\\div"], ["±", "\\pm"],
+];
+
+function EquationEditor({ content, settings, updateContent, updateSettings }) {
+    const inputRef = useRef(null);
+    const expression = content.expression || "";
+    function insert(template) {
+        const input = inputRef.current;
+        const start = input?.selectionStart ?? expression.length;
+        const end = input?.selectionEnd ?? start;
+        const next = expression.slice(0, start) + template + expression.slice(end);
+        updateContent("expression", next);
+        requestAnimationFrame(() => { input?.focus(); const cursor = start + (template.includes("{}") ? template.indexOf("{}") + 1 : template.length); input?.setSelectionRange(cursor, cursor); });
+    }
+    return <div className="block_equation_editor">
+        <div className="equation_editor_main">
+            <label>Mathematical expression<textarea ref={inputRef} value={expression} onChange={event=>updateContent("expression",event.target.value)} placeholder="Example: x^{2} + y^{2} = r^{2}"/></label>
+            <div className="equation_toolbar" aria-label="Equation formatting">{EQUATION_TOOLS.map(([label,template])=><button type="button" key={label} onClick={()=>insert(template)}>{label}</button>)}</div>
+            <small>Use the buttons or type formats such as x^{'{2}'}, H_2O, \\frac{'{a}{b}'} or \\sqrt{'{x}'}.</small>
+            <div className="equation_live_preview"><span>Live preview</span><EquationBlock block={{content,settings}}/></div>
+        </div>
+        <label>Caption<input value={content.caption||""} onChange={event=>updateContent("caption",event.target.value)}/></label>
+        <label>Alignment<select value={settings.align||"center"} onChange={event=>updateSettings("align",event.target.value)}><option value="left">Left</option><option value="center">Center</option><option value="right">Right</option></select></label>
+    </div>;
 }

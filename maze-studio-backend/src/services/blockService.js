@@ -18,8 +18,12 @@ const allowedBlockTypes = [
   "CALLOUT",
   "DIVIDER",
   "TABLE",
+  "WHITEBOARD",
+  "EQUATION",
   "EMBED",
   "BUTTON",
+  "CHECKLIST",
+  "FLASHCARDS",
   "LAYOUT",
   "COLUMN",
   "MULTIPLE_CHOICE",
@@ -27,8 +31,10 @@ const allowedBlockTypes = [
   "SHORT_ANSWER",
   "FILL_BLANKS",
   "MATCHING",
+  "CLASSIFICATION",
   "ORDERING",
   "CHALLENGE",
+  "CANVAS",
 ];
 
 const layoutPresets = {
@@ -44,6 +50,8 @@ const assetBlockTypes = [
     "IMAGE",
     "PDF",
     "FILE",
+    "AUDIO",
+    "VIDEO",
 ];
 
 async function validateChallengeReference(userId, stepId, blockType, content) {
@@ -565,6 +573,12 @@ async function createBlock(
     throw error;
   }
 
+  if (!isPlainObject(content) || !isPlainObject(settings)) {
+    const error = new Error("Block content and settings must be objects");
+    error.statusCode = 400;
+    throw error;
+  }
+
   if (parentBlockId) {
     const parent = await blockModel.findBlockInStep(
       parentBlockId,
@@ -608,6 +622,27 @@ async function createBlock(
   });
 }
 
+async function uploadInlineImage(userId,blockId,file){
+  const block=await getBlockForOwner(userId,blockId);
+  if(!file?.mimetype?.startsWith("image/")){const error=new Error("Choose an image file");error.statusCode=400;throw error}
+  const uploaded=await storageService.uploadImage({file,folder:`blocks/${block.block_type.toLowerCase()}/inline`,ownerId:userId});
+  return{url:uploaded.publicUrl,objectKey:uploaded.objectKey,alt:file.originalname||""};
+}
+
+async function uploadCanvasAsset(userId,blockId,file){
+  const block=await getBlockForOwner(userId,blockId);
+  if(block.block_type!=="CANVAS"){const error=new Error("This endpoint is only available for Canvas Blocks");error.statusCode=400;throw error}
+  const mimeType=file?.mimetype||"";
+  if(!mimeType.startsWith("image/")&&!mimeType.startsWith("video/")){const error=new Error("Choose an image or video file");error.statusCode=400;throw error}
+  const uploaded=await storageService.uploadFile({file,folder:`blocks/canvas/${mimeType.startsWith("video/")?"video":"image"}`,ownerId:userId});
+  return{url:uploaded.publicUrl,objectKey:uploaded.objectKey,name:uploaded.originalName,mimeType:uploaded.mimeType,size:uploaded.size};
+}
+
+async function checkPresentationExercise(userId,blockId,answer){
+  const block=await getBlockForOwner(userId,blockId);
+  return require("./learnerService").gradeExerciseBlock(block,answer);
+}
+
 module.exports = {
     createBlock,
     getStepBlocks,
@@ -615,6 +650,9 @@ module.exports = {
     deleteBlock,
     reorderBlocks,
     uploadBlockAsset,
+    uploadInlineImage,
+    uploadCanvasAsset,
     deleteBlockAsset,
     createLayout,
+    checkPresentationExercise,
 };

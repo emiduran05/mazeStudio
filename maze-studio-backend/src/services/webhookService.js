@@ -34,7 +34,7 @@ function unixToDate(timestamp) {
 }
 
 async function handleCheckoutCompleted(session) {
-  if (["OFFERING_PURCHASE","OFFERING_WEEKLY_SUBSCRIPTION"].includes(session.metadata?.mazeStudioCheckoutKind)) {
+  if (["OFFERING_PURCHASE","OFFERING_WEEKLY_SUBSCRIPTION","OFFERING_MONTHLY_SUBSCRIPTION"].includes(session.metadata?.mazeStudioCheckoutKind)) {
     const marketplaceModel = require("../models/marketplaceModel");
     if(session.customer)await marketplaceModel.saveCustomer(session.metadata.mazeStudioUserId,typeof session.customer==="string"?session.customer:session.customer.id);
     await marketplaceModel.fulfillOrder(
@@ -43,6 +43,10 @@ async function handleCheckoutCompleted(session) {
       false,
       session.subscription || null
     );
+    let paymentMethod=null;
+    if(session.payment_intent){const intent=await stripe.paymentIntents.retrieve(typeof session.payment_intent==="string"?session.payment_intent:session.payment_intent.id);paymentMethod=intent.payment_method;}
+    else if(session.subscription){const subscription=await stripe.subscriptions.retrieve(typeof session.subscription==="string"?session.subscription:session.subscription.id);paymentMethod=await getEffectivePaymentMethod(subscription);}
+    await savePaymentMethodForUser(session.metadata.mazeStudioUserId,paymentMethod);
     return;
   }
   const userId =
@@ -140,9 +144,10 @@ async function processStripeEvent(event) {
       const invoice=event.data.object;
       if(invoice.subscription){
         const subscription=await stripe.subscriptions.retrieve(invoice.subscription);
-        if(subscription.metadata?.mazeStudioCheckoutKind==="OFFERING_WEEKLY_SUBSCRIPTION"){
+        if(["OFFERING_WEEKLY_SUBSCRIPTION","OFFERING_MONTHLY_SUBSCRIPTION"].includes(subscription.metadata?.mazeStudioCheckoutKind)){
           const marketplaceModel=require("../models/marketplaceModel");
-          await marketplaceModel.extendWeeklySchedule(subscription.metadata.mazeStudioOrderId,4);
+          const orderType=(await require("../config/db").query(`SELECT offering.offering_type FROM offering_orders orders JOIN offerings offering ON offering.id=orders.offering_id WHERE orders.id=$1::uuid`,[subscription.metadata.mazeStudioOrderId])).rows[0]?.offering_type;
+          if(orderType==="ONE_TO_ONE")await marketplaceModel.extendWeeklySchedule(subscription.metadata.mazeStudioOrderId,Number(process.env.BOOKING_RESERVATION_WEEKS||26));
           if(invoice.billing_reason!=="subscription_create"){
             await marketplaceModel.recordSubscriptionRenewal(subscription.metadata.mazeStudioOrderId,invoice);
           }
@@ -261,7 +266,7 @@ async function handleCustomerUpdated(customerEvent) {
   });
 }
 async function handleSubscriptionUpdated(subscription) {
-  if (subscription.metadata?.mazeStudioCheckoutKind === "OFFERING_WEEKLY_SUBSCRIPTION") {
+  if (["OFFERING_WEEKLY_SUBSCRIPTION","OFFERING_MONTHLY_SUBSCRIPTION"].includes(subscription.metadata?.mazeStudioCheckoutKind)) {
     await webhookModel.updateOfferingSubscription(
       subscription.id,
       subscription.status,

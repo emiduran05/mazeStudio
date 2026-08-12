@@ -1,9 +1,14 @@
 import { Link } from "react-router-dom";
+import {useEffect,useState} from "react";
+import {apiRequest} from "../../../api/api";
 import { useAuth } from "../../../context/AuthContext";
 import "./StudentPages.css";
 
 export default function StudentSettings() {
-    const { user } = useAuth();
+    const { user,setUser } = useAuth();
+    const [form,setForm]=useState({firstName:"",lastName:"",email:"",timezone:Intl.DateTimeFormat().resolvedOptions().timeZone}),[message,setMessage]=useState("");
+    useEffect(()=>{if(user)setForm({firstName:user.first_name||"",lastName:user.last_name||"",email:user.email||"",timezone:user.timezone||Intl.DateTimeFormat().resolvedOptions().timeZone})},[user]);
+    async function save(event){event.preventDefault();setMessage("Saving…");try{const result=await apiRequest("/users/profile",{method:"PUT",body:JSON.stringify(form)});setUser(result.user);setMessage("Profile updated.")}catch(error){setMessage(error.message)}}
 
     return (
         <div className="student_settings_grid">
@@ -15,25 +20,22 @@ export default function StudentSettings() {
                     </div>
                 </div>
 
-                <div className="student_settings_form">
+                <form className="student_settings_form" onSubmit={save}>
                     <label>
                         First name
-                        <input type="text" value={user?.first_name || ""} readOnly />
+                        <input required type="text" value={form.firstName} onChange={event=>setForm({...form,firstName:event.target.value})}/>
                     </label>
                     <label>
                         Last name
-                        <input type="text" value={user?.last_name || ""} readOnly />
+                        <input required type="text" value={form.lastName} onChange={event=>setForm({...form,lastName:event.target.value})}/>
                     </label>
                     <label className="full">
                         Email address
-                        <input type="email" value={user?.email || ""} readOnly />
+                        <input required type="email" value={form.email} onChange={event=>setForm({...form,email:event.target.value})}/>
                     </label>
-                    <p className="full student_settings_note">
-                        Profile details are loaded from your authenticated Maze
-                        Studio account.
-                    </p>
-                    {/* TODO: Reuse the profile update endpoint when its learner fields are finalized. */}
-                </div>
+                    <label className="full">Timezone<input value={form.timezone} onChange={event=>setForm({...form,timezone:event.target.value})}/></label>
+                    <button type="submit">Save profile</button>{message&&<p className="student_settings_note">{message}</p>}
+                </form>
             </section>
 
             <aside className="student_panel">

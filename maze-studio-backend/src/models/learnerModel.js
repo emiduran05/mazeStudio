@@ -8,6 +8,7 @@ async function findActiveEnrollment(userId, journeyId, client = pool) {
     WHERE enrollment.learner_user_id = $1
       AND enrollment.learning_journey_id = $2
       AND enrollment.status = 'ACTIVE'
+      AND (enrollment.access_expires_at IS NULL OR enrollment.access_expires_at > NOW())
     LIMIT 1
     `,
     [userId, journeyId]
@@ -40,6 +41,7 @@ async function findEnrollments(userId) {
       ON educator_profile.educator_user_id=educator.id AND educator_profile.is_published=TRUE
     WHERE enrollment.learner_user_id = $1
       AND enrollment.status IN ('ACTIVE', 'COMPLETED')
+      AND (enrollment.access_expires_at IS NULL OR enrollment.access_expires_at > NOW())
       AND journey.status <> 'ARCHIVED'
     ORDER BY enrollment.updated_at DESC, enrollment.enrolled_at DESC
     `,
@@ -70,6 +72,7 @@ async function findJourney(userId, journeyId) {
       ON enrollment.learning_journey_id = journey.id
       AND enrollment.learner_user_id = $1
       AND enrollment.status = 'ACTIVE'
+      AND (enrollment.access_expires_at IS NULL OR enrollment.access_expires_at > NOW())
     WHERE journey.id = $2
       AND journey.status <> 'ARCHIVED'
     LIMIT 1
@@ -311,6 +314,7 @@ async function findChallengeAccess(userId, challengeId, client = pool) {
       ON enrollment.learning_journey_id = challenge.learning_journey_id
       AND enrollment.learner_user_id = $1
       AND enrollment.status = 'ACTIVE'
+      AND (enrollment.access_expires_at IS NULL OR enrollment.access_expires_at > NOW())
     WHERE challenge.id = $2
       AND challenge.status = 'PUBLISHED'
     LIMIT 1
@@ -364,6 +368,7 @@ async function findExerciseBlockAccess(userId, blockId) {
       ON enrollment.learning_journey_id = stage.learning_journey_id
       AND enrollment.learner_user_id = $1
       AND enrollment.status = 'ACTIVE'
+      AND (enrollment.access_expires_at IS NULL OR enrollment.access_expires_at > NOW())
     WHERE block.id = $2
     LIMIT 1
     `,

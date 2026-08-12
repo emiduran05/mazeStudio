@@ -2,8 +2,13 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { checkExerciseAnswer } from "../../api/enrollmentApi";
 import "./ContentRenderer.css";
+import CanvasDocumentViewer from "../pages/studio/canvasLab/CanvasDocumentViewer";
+import WhiteboardBlock from "./WhiteboardBlock";
+import EquationBlock from "./EquationBlock";
+import ReliableAudio from "./ReliableAudio";
+import RichTextContent from "./RichTextContent";
 
-export default function ContentRenderer({ blocks = [], privateStepAccess = null }) {
+export default function ContentRenderer({ blocks = [], privateStepAccess = null, exerciseChecker = null }) {
     const childrenByParent = new Map();
 
     for (const block of blocks) {
@@ -14,16 +19,19 @@ export default function ContentRenderer({ blocks = [], privateStepAccess = null 
     }
 
     function renderChildren(parentId = null) {
-        return (childrenByParent.get(parentId || "root") || []).map((block) => (
+        return (childrenByParent.get(parentId || "root") || []).filter(block=>block.block_type!=="IMAGE"||Boolean(block.content?.url||block.content?.imageUrl||block.content?.image_url)).map((block) => (
             <section
                 className={`learner_content_block block_${block.block_type.toLowerCase()}`}
                 key={block.id}
             >
+                {block.content?.media?.url&&block.content.media.position!=="below"&&<BlockMedia media={block.content.media}/>} 
                 <ContentBlock
                     block={block}
                     renderChildren={renderChildren}
                     privateStepAccess={privateStepAccess}
+                    exerciseChecker={exerciseChecker}
                 />
+                {block.content?.media?.url&&block.content.media.position==="below"&&<BlockMedia media={block.content.media}/>} 
             </section>
         ));
     }
@@ -31,18 +39,22 @@ export default function ContentRenderer({ blocks = [], privateStepAccess = null 
     return <div className="learner_content_renderer">{renderChildren()}</div>;
 }
 
-function ContentBlock({ block, renderChildren, privateStepAccess }) {
+function BlockMedia({media,className="learner_inline_media"}){return media?.url?<figure className={className}><img src={media.url} alt={media.alt||""}/>{media.caption&&<figcaption>{media.caption}</figcaption>}</figure>:null}
+
+function ContentBlock({ block, renderChildren, privateStepAccess, exerciseChecker }) {
     const content = block.content || {};
     const settings = block.settings || {};
 
     switch (block.block_type) {
+        case "CANVAS":
+            return content.document ? <CanvasDocumentViewer document={content.document}/> : null;
         case "HEADING": {
             const level = Math.min(Math.max(Number(settings.level) || 2, 2), 4);
             const Tag = `h${level}`;
             return <Tag>{content.text || "Untitled section"}</Tag>;
         }
         case "TEXT":
-            return <p>{content.text || ""}</p>;
+            return <RichTextContent content={content} style={{fontSize:`${Math.min(72,Math.max(10,Number(settings.fontSize)||16))}px`,color:settings.color||undefined,backgroundColor:settings.backgroundColor||undefined,fontFamily:settings.fontFamily||undefined,fontWeight:settings.fontWeight||undefined,textAlign:settings.textAlign||undefined,lineHeight:settings.lineHeight||undefined,letterSpacing:`${Number(settings.letterSpacing)||0}px`,maxWidth:settings.maxWidth||undefined,marginInline:settings.maxWidth&&settings.maxWidth!=="100%"?"auto":undefined}}/>;
         case "QUOTE":
             return (
                 <blockquote>
@@ -61,12 +73,13 @@ function ContentBlock({ block, renderChildren, privateStepAccess }) {
                 <figure>
                     <img src={content.url} alt={content.alt || ""} />
                     {content.caption && <figcaption>{content.caption}</figcaption>}
+                    {content.sourceUrl && <a className="learner_image_source" href={content.sourceUrl} target="_blank" rel="noreferrer">Image source <i className="fa-solid fa-arrow-up-right-from-square"/></a>}
                 </figure>
             ) : null;
         case "VIDEO":
             return content.url ? <video controls src={content.url} /> : null;
         case "AUDIO":
-            return content.url ? <audio controls src={content.url} /> : null;
+            return content.url ? <ReliableAudio src={content.url} durationSeconds={content.durationSeconds} /> : null;
         case "PDF":
         case "FILE":
             return content.url ? (
@@ -100,6 +113,7 @@ function ContentBlock({ block, renderChildren, privateStepAccess }) {
                                                     : cellIndex
                                             }
                                         >
+                                            {isCellObject&&cell.imageUrl&&<img className="learner_table_cell_image" src={cell.imageUrl} alt={cell.alt||""}/>} 
                                             {value}
                                         </CellTag>
                                     );
@@ -109,20 +123,28 @@ function ContentBlock({ block, renderChildren, privateStepAccess }) {
                     </tbody>
                 </table>
             );
+        case "WHITEBOARD":
+            return <WhiteboardBlock block={block}/>;
+        case "EQUATION":
+            return <EquationBlock block={block}/>;
         case "LAYOUT":
             return <div className="learner_content_layout">{renderChildren(block.id)}</div>;
         case "COLUMN":
             return <div className="learner_content_column">{renderChildren(block.id)}</div>;
         case "BUTTON":
             return (
-                <a className="student_primary_link" href={content.url || "#"}>
+                <div style={{textAlign:settings.alignment||"left"}}><a className={`student_primary_link variant_${settings.variant||"primary"}`} href={content.url || "#"} target={settings.openInNewTab!==false?"_blank":undefined} rel="noreferrer">
                     {content.text || content.label || "Open link"}
-                </a>
+                </a></div>
             );
         case "EMBED":
             return content.url ? (
-                <iframe src={content.url} title={content.title || "Embedded content"} />
+                <iframe style={{height:settings.height||500}} src={content.url} title={content.title || "Embedded content"} />
             ) : null;
+        case "CHECKLIST":
+            return <ChecklistBlock block={block}/>;
+        case "FLASHCARDS":
+            return <FlashcardsBlock block={block}/>;
         case "CHALLENGE": {
             const passed = content.progressStatus === "PASSED";
             const submitted =
@@ -171,14 +193,29 @@ function ContentBlock({ block, renderChildren, privateStepAccess }) {
         case "SHORT_ANSWER":
         case "FILL_BLANKS":
         case "MATCHING":
+        case "CLASSIFICATION":
         case "ORDERING":
-            return <ExerciseBlock block={block} privateStepAccess={privateStepAccess} />;
+            return <ExerciseBlock block={block} privateStepAccess={privateStepAccess} exerciseChecker={exerciseChecker} />;
         default:
             return null;
     }
 }
 
-function ExerciseBlock({ block, privateStepAccess }) {
+function ChecklistBlock({block}) {
+    const storageKey=`maze-checklist:${block.id}`;
+    const [checked,setChecked]=useState(()=>{try{return JSON.parse(localStorage.getItem(storageKey)||"[]")}catch{return[]}});
+    function toggle(id){setChecked((current)=>{const next=current.includes(id)?current.filter((item)=>item!==id):[...current,id];try{localStorage.setItem(storageKey,JSON.stringify(next))}catch{}return next})}
+    return <section className="learner_checklist"><h3>{block.content?.title||"Checklist"}</h3><div>{(block.content?.items||[]).map((item)=><label className={checked.includes(item.id)?"complete":""} key={item.id}><input type="checkbox" checked={checked.includes(item.id)} onChange={()=>toggle(item.id)}/><span><i className="fa-solid fa-check"/></span>{item.text}</label>)}</div></section>;
+}
+
+function FlashcardsBlock({block}) {
+    const cards=block.content?.cards||[];const[index,setIndex]=useState(0);const[flipped,setFlipped]=useState(false);const card=cards[index];
+    if(!card)return null;
+    function move(direction){setIndex((current)=>(current+direction+cards.length)%cards.length);setFlipped(false)}
+    return <section className="learner_flashcards"><header><div><span>INTERACTIVE REVIEW</span><h3>{block.content?.title||"Flashcards"}</h3></div><em>{index+1} / {cards.length}</em></header><button type="button" className={`learner_flashcard ${flipped?"flipped":""}`} onClick={()=>setFlipped((value)=>!value)}><small>{flipped?"BACK":"FRONT"}</small><strong>{flipped?card.back:card.front}</strong><span><i className="fa-solid fa-rotate"/> Click to flip</span></button><footer><button type="button" onClick={()=>move(-1)}><i className="fa-solid fa-arrow-left"/> Previous</button><button type="button" onClick={()=>move(1)}>Next <i className="fa-solid fa-arrow-right"/></button></footer></section>;
+}
+
+function ExerciseBlock({ block, privateStepAccess, exerciseChecker }) {
     const [answer, setAnswer] = useState(
         block.block_type === "ORDERING"
             ? block.content?.items || []
@@ -199,7 +236,9 @@ function ExerciseBlock({ block, privateStepAccess }) {
         setShowAnswer(false);
 
         try {
-            setResult(privateStepAccess
+            setResult(exerciseChecker
+                ? await exerciseChecker(block.id,answer)
+                : privateStepAccess
                 ? await privateStepAccess.checkAnswer(block.id, answer)
                 : await checkExerciseAnswer(block.id, answer));
         } catch (error) {
@@ -255,7 +294,7 @@ function ExerciseBlock({ block, privateStepAccess }) {
                                 onClick={() => selectOption(option.id)}
                             >
                                 <span>{String.fromCharCode(65 + index)}</span>
-                                {option.text || `Option ${index + 1}`}
+                                {option.imageUrl&&<img className="learner_exercise_item_image" src={option.imageUrl} alt={option.alt||option.text||""}/>}<strong>{option.text || `Option ${index + 1}`}</strong>
                             </button>
                         );
                     })}
@@ -301,8 +340,20 @@ function ExerciseBlock({ block, privateStepAccess }) {
     if (block.block_type === "FILL_BLANKS") {
         const segments = (content.text || "{{blank}}").split(/(\{\{blank\}\})/g);
         const values = Array.isArray(answer) ? answer : [];
+        const wordBank = Array.isArray(content.wordBank) ? content.wordBank.filter(Boolean) : [];
         return (
             <ExerciseShell label="Fill in the blanks" {...exerciseProps}>
+                {wordBank.length > 0 && (
+                    <div className="learner_word_bank" aria-label="Word bank">
+                        {wordBank.map((option, index) => (
+                            <button type="button" key={`${option}-${index}`} onClick={() => {
+                                const next = [...values];
+                                const emptyIndex = Array.from({ length: (content.text?.match(/\{\{blank\}\}/g) || []).length }).findIndex((_, blankIndex) => !next[blankIndex]);
+                                if (emptyIndex >= 0) { next[emptyIndex] = option; setAnswer(next); }
+                            }}>{option}</button>
+                        ))}
+                    </div>
+                )}
                 <div className="learner_fill_sentence">
                     {segments.map((segment, index) => {
                         if (segment !== "{{blank}}") {
@@ -338,10 +389,11 @@ function ExerciseBlock({ block, privateStepAccess }) {
 
         return (
             <ExerciseShell label="Matching" {...exerciseProps}>
+                {pairs.some(pair=>pair.rightImageUrl)&&<div className="learner_matching_visual_bank">{pairs.map((pair,index)=>pair.rightImageUrl&&<figure key={pair.id||index}><span>{String.fromCharCode(65+index)}</span><img src={pair.rightImageUrl} alt={pair.rightAlt||pair.right||""}/>{pair.right&&<figcaption>{pair.right}</figcaption>}</figure>)}</div>}
                 <div className="learner_matching_grid">
                     {pairs.map((pair, index) => (
                         <label key={pair.id || index}>
-                            <span>{pair.left || `Item ${index + 1}`}</span>
+                            <span>{pair.leftImageUrl&&<img className="learner_exercise_item_image" src={pair.leftImageUrl} alt={pair.leftAlt||pair.left||""}/>}<strong>{pair.left || (!pair.leftImageUrl?`Item ${index + 1}`:"")}</strong></span>
                             <select
                                 value={values[pair.id] || ""}
                                 onChange={(event) =>
@@ -357,7 +409,7 @@ function ExerciseBlock({ block, privateStepAccess }) {
                                         key={choice.id || choiceIndex}
                                         value={choice.id}
                                     >
-                                        {choice.right || `Option ${choiceIndex + 1}`}
+                                        {choice.right || (choice.rightImageUrl?`Visual option ${choiceIndex + 1}`:`Option ${choiceIndex + 1}`)}
                                     </option>
                                 ))}
                             </select>
@@ -366,6 +418,11 @@ function ExerciseBlock({ block, privateStepAccess }) {
                 </div>
             </ExerciseShell>
         );
+    }
+
+    if (block.block_type === "CLASSIFICATION") {
+        const items=content.items||[],categories=content.categories||[],values=answer&&typeof answer==="object"?answer:{};
+        return <ExerciseShell label="Classification" {...exerciseProps}><h3>{content.prompt||"Classify each item"}</h3><div className="learner_matching_grid">{items.map((item,index)=><label key={item.id||index}><span>{item.imageUrl&&<img className="learner_exercise_item_image" src={item.imageUrl} alt={item.alt||item.text||""}/>}<strong>{item.text||(!item.imageUrl?`Item ${index+1}`:"")}</strong></span><select value={values[item.id]||""} onChange={event=>setAnswer({...values,[item.id]:event.target.value})}><option value="">Choose a category</option>{categories.map(category=><option key={category.id} value={category.id}>{category.label}</option>)}</select></label>)}</div></ExerciseShell>;
     }
 
     const items = Array.isArray(answer) ? answer : content.items || [];
@@ -385,7 +442,7 @@ function ExerciseBlock({ block, privateStepAccess }) {
                 {items.map((item, index) => (
                     <div key={item.id || index}>
                         <span>{index + 1}</span>
-                        <strong>{item.text || `Item ${index + 1}`}</strong>
+                        {item.imageUrl&&<img className="learner_exercise_item_image" src={item.imageUrl} alt={item.alt||item.text||""}/>}<strong>{item.text || (!item.imageUrl?`Item ${index + 1}`:"")}</strong>
                         <button
                             type="button"
                             onClick={() => moveItem(index, -1)}

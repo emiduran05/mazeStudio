@@ -1,5 +1,6 @@
 import useEnrollments from "../../../hooks/useEnrollments";
 import "./StudentPages.css";
+import "./JourneyImageFixes.css";
 
 export default function CompletedLearning() {
     const { enrollments, loading, error, reload } = useEnrollments();

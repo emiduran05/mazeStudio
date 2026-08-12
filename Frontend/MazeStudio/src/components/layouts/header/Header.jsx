@@ -1,11 +1,13 @@
 import { useState } from "react";
 import "./Header.css";
 import Notifications from "./notifications/Notifications";
+import {useNavigate} from "react-router-dom";
 
 export default function Header({ isOpen, setIsOpen, darkmode, setDarkmode }) {
 
     const [isNotificationOpen, setIsNotificationOpen] = useState(false)
     const [unreadCount, setUnreadCount] = useState(0)
+    const navigate=useNavigate();
 
     return (<>
 
@@ -36,17 +38,17 @@ export default function Header({ isOpen, setIsOpen, darkmode, setDarkmode }) {
                         )}
                     </button>
 
-                        <i class="fa-solid fa-bars openButton" onClick={() => { setIsOpen(!isOpen) }}></i>
+                        <i className="fa-solid fa-bars openButton" onClick={() => { setIsOpen(!isOpen) }}></i>
                 </div>
 
                 <div className="studio_content_header_section">
-                    <div className="input_search">
-                        <i class="fa-solid fa-magnifying-glass"></i>
-                        <input type="text" placeholder="Search for learning journeys, students etc..." />
-                        <button className="search_btn">
+                    <form className="input_search" onSubmit={event=>{event.preventDefault();const query=new FormData(event.currentTarget).get("q")?.trim();if(query)navigate(`/studio/search?q=${encodeURIComponent(query)}`)}}>
+                        <i className="fa-solid fa-magnifying-glass"></i>
+                        <input name="q" type="search" placeholder="Search journeys, students or challenges" />
+                        <button type="submit" className="search_btn">
                             Search
                         </button>
-                    </div>
+                    </form>
                 </div>
 
                 <div className="studio_content_header_section">

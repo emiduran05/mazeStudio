@@ -9,13 +9,13 @@ function zonedParts(date,timeZone){const parts=new Intl.DateTimeFormat("en-CA",{
 function zonedLocalToUtc(year,month,day,hour,minute,timeZone){const desired=Date.UTC(year,month-1,day,hour,minute);let guess=new Date(desired);for(let i=0;i<2;i++){const p=zonedParts(guess,timeZone),represented=Date.UTC(+p.year,+p.month-1,+p.day,+p.hour,+p.minute);guess=new Date(guess.getTime()+desired-represented)}return guess;}
 async function buildAvailableSlots(offering,from,to){
   const availability=offering.settings?.bookingAvailability,weekly=availability?.weekly||[],timeZone=availability?.timezone;
-  if(!timeZone||!weekly.length)return[];const start=new Date(from),finish=new Date(to),duration=Number(offering.session_duration_minutes)||60,step=Number(availability.slotIntervalMinutes)||30;
+  if(!timeZone||!weekly.length)return[];const start=new Date(from),finish=new Date(to),duration=Number(offering.session_duration_minutes)||60,step=Number(availability.slotIntervalMinutes)||30,minBookingTime=Date.now()+(Number(process.env.MIN_BOOKING_LEAD_HOURS||12)*3600000);
   const busy=await model.listAvailability(offering.id,start.toISOString(),finish.toISOString()),slots=[];
   for(let cursor=new Date(start);cursor<finish;cursor.setUTCDate(cursor.getUTCDate()+1)){
     const local=zonedParts(cursor,timeZone),weekday=new Date(Date.UTC(+local.year,+local.month-1,+local.day)).getUTCDay();
     for(const rule of weekly.filter(item=>Number(item.day)===weekday)){
       const [startHour,startMinute]=rule.start.split(":").map(Number),[endHour,endMinute]=rule.end.split(":").map(Number);const limit=endHour*60+endMinute;
-      for(let minutes=startHour*60+startMinute;minutes+duration<=limit;minutes+=step){const slotStart=zonedLocalToUtc(+local.year,+local.month,+local.day,Math.floor(minutes/60),minutes%60,timeZone),slotEnd=new Date(slotStart.getTime()+duration*60000);if(slotStart<=new Date()||slotStart<start||slotStart>=finish)continue;if(!busy.some(event=>new Date(event.starts_at)<slotEnd&&new Date(event.ends_at)>slotStart))slots.push(slotStart.toISOString())}
+      for(let minutes=startHour*60+startMinute;minutes+duration<=limit;minutes+=step){const slotStart=zonedLocalToUtc(+local.year,+local.month,+local.day,Math.floor(minutes/60),minutes%60,timeZone),slotEnd=new Date(slotStart.getTime()+duration*60000);if(slotStart.getTime()<minBookingTime||slotStart<start||slotStart>=finish)continue;if(!busy.some(event=>new Date(event.starts_at)<slotEnd&&new Date(event.ends_at)>slotStart))slots.push(slotStart.toISOString())}
     }
   }
   return [...new Set(slots)].sort();
@@ -52,6 +52,7 @@ async function beginEnrollment(user, offeringId, cohortId = null, booking = {}) 
   if (GROUP_TYPES.has(offering.offering_type)) {
     const selected = cohorts.find(item => item.id === cohortId);
     if (!selected) throw Object.assign(new Error("Select an available group"), { statusCode: 400 });
+    if (!selected.enrollment_open) throw Object.assign(new Error("Enrollment for this cohort is closed because the group has already started or is full"), { statusCode: 409 });
   } else cohortId = null;
   if(offering.offering_type==="ONE_TO_ONE"){
     booking.sessionCount=Number(booking.sessionCount);
@@ -59,13 +60,14 @@ async function beginEnrollment(user, offeringId, cohortId = null, booking = {}) 
     if(!["CUSTOM","WEEKLY"].includes(booking.frequency)) throw Object.assign(new Error("Choose a flexible or weekly schedule"),{statusCode:400});
     if(booking.frequency==="WEEKLY"){const active=(await model.listSubscriptions(user.id)).find(item=>item.offering_id===offering.id&&["ACTIVE","TRIALING"].includes(item.status));if(active)throw Object.assign(new Error("You already have an active weekly subscription for this experience"),{statusCode:409});}
     if(!Array.isArray(booking.sessionDates)||booking.sessionDates.length!==booking.sessionCount) throw Object.assign(new Error("Choose one calendar date for every private class"),{statusCode:400});
-    const dates=booking.sessionDates.map(value=>new Date(value));if(dates.some(date=>Number.isNaN(date.getTime())||date<=new Date()))throw Object.assign(new Error("All private classes must use valid future dates"),{statusCode:400});
+    const dates=booking.sessionDates.map(value=>new Date(value)),minimumStart=Date.now()+(Number(process.env.MIN_BOOKING_LEAD_HOURS||12)*3600000);if(dates.some(date=>Number.isNaN(date.getTime())||date.getTime()<minimumStart))throw Object.assign(new Error("Private classes must be booked at least 12 hours in advance"),{statusCode:400});
     if(new Set(dates.map(date=>date.toISOString())).size!==dates.length)throw Object.assign(new Error("Private classes cannot share the same date and time"),{statusCode:400});
     booking.sessionDates=dates.sort((a,b)=>a-b).map(date=>date.toISOString());booking.firstSessionAt=booking.sessionDates[0];
     const offered=await buildAvailableSlots(offering,new Date().toISOString(),new Date(Date.now()+730*86400000).toISOString()),offeredSet=new Set(offered);
     if(booking.sessionDates.some(value=>!offeredSet.has(value)))throw Object.assign(new Error("One or more selected times are outside the educator's current availability"),{statusCode:409});
     const duration=Number(offering.session_duration_minutes)||60;
-    const slots=booking.sessionDates.map(value=>{const startsAt=new Date(value);return{starts_at:startsAt.toISOString(),ends_at:new Date(startsAt.getTime()+duration*60000).toISOString()}});
+    const reservationWeeks=booking.frequency==="WEEKLY"?Number(process.env.BOOKING_RESERVATION_WEEKS||26):1;
+    const slots=[];for(const value of booking.sessionDates){const template=new Date(value);for(let week=0;week<reservationWeeks;week++){const startsAt=new Date(template.getTime()+week*7*86400000);slots.push({starts_at:startsAt.toISOString(),ends_at:new Date(startsAt.getTime()+duration*60000).toISOString()})}}
     const conflicts=await model.findBookingConflicts(offering.id,slots);
     if(conflicts.length) throw Object.assign(new Error("One or more selected class times are unavailable. Choose another first date or frequency."),{statusCode:409,conflicts});
   }
@@ -98,8 +100,8 @@ async function beginEnrollment(user, offeringId, cohortId = null, booking = {}) 
       ...(recurring?{recurring:{interval:"month"}}:{}),product_data: { name: recurring?`${offering.title} · ${order.session_count} classes every week`:offering.offering_type==="ONE_TO_ONE"?`${offering.title} · ${order.session_count} classes`:offering.title, description: (offering.description || offering.journey_description || "Maze Studio Learning Journey").slice(0, 500) } } }],
     success_url: `${base}/marketplace/journeys/${offering.learning_journey_id}?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/marketplace/journeys/${offering.learning_journey_id}?checkout=cancelled`,
-    metadata: { mazeStudioCheckoutKind: recurring?"OFFERING_WEEKLY_SUBSCRIPTION":"OFFERING_PURCHASE", mazeStudioOrderId: order.id, mazeStudioUserId: user.id },
-    ...(recurring?{subscription_data:{application_fee_percent:destination.feePercent,transfer_data:{destination:destination.accountId},metadata:{mazeStudioCheckoutKind:"OFFERING_WEEKLY_SUBSCRIPTION",mazeStudioOrderId:order.id,mazeStudioUserId:user.id}}}:{payment_intent_data:{application_fee_amount:platformFee,transfer_data:{destination:destination.accountId},metadata:{mazeStudioOrderId:order.id,mazeStudioOfferingId:offering.id}}}),
+    metadata: { mazeStudioCheckoutKind: recurring?"OFFERING_MONTHLY_SUBSCRIPTION":"OFFERING_PURCHASE", mazeStudioOrderId: order.id, mazeStudioUserId: user.id },
+    ...(recurring?{payment_method_collection:"always",subscription_data:{application_fee_percent:destination.feePercent,transfer_data:{destination:destination.accountId},metadata:{mazeStudioCheckoutKind:"OFFERING_MONTHLY_SUBSCRIPTION",mazeStudioOrderId:order.id,mazeStudioUserId:user.id}}}:{payment_intent_data:{setup_future_usage:"off_session",application_fee_amount:platformFee,transfer_data:{destination:destination.accountId},metadata:{mazeStudioOrderId:order.id,mazeStudioOfferingId:offering.id,billingType:order.billing_type}}}),
     allow_promotion_codes: true,
   });
   await model.attachCheckout(order.id, session.id);
@@ -114,7 +116,7 @@ async function availability(offeringId,query){
 
 async function confirm(userId, sessionId) {
   const session = await stripe.checkout.sessions.retrieve(sessionId);
-  if (!["OFFERING_PURCHASE","OFFERING_WEEKLY_SUBSCRIPTION"].includes(session.metadata?.mazeStudioCheckoutKind) || session.metadata?.mazeStudioUserId !== userId) {
+  if (!["OFFERING_PURCHASE","OFFERING_WEEKLY_SUBSCRIPTION","OFFERING_MONTHLY_SUBSCRIPTION"].includes(session.metadata?.mazeStudioCheckoutKind) || session.metadata?.mazeStudioUserId !== userId) {
     throw Object.assign(new Error("Checkout does not belong to this account"), { statusCode: 403 });
   }
   if (session.payment_status !== "paid") return { enrolled: false, paymentStatus: session.payment_status };

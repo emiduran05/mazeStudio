@@ -196,6 +196,7 @@ export default function ChallengeEditor() {
           ["SHORT_ANSWER","Short answer","fa-keyboard"],
           ["LONG_ANSWER","Long answer","fa-align-left"],
           ["FILE_UPLOAD","File upload","fa-paperclip"],
+          ["SPEAKING","Speaking response","fa-microphone"],
         ].map(([type,label,icon])=><button type="button" key={type} onClick={()=>addQuestion(type)}><i className={`fa-solid ${icon}`}/><span>{label}</span></button>)}
       </aside>
       <div className="challenge-block-canvas">
@@ -204,7 +205,7 @@ export default function ChallengeEditor() {
     {form.questions.map((q,index)=><div className="challenge-question" key={q.id||index}>
       <div className="challenge-row"><h3><span className="challenge-block-number">{index+1}</span> {q.type.replaceAll("_"," ")}</h3><div className="challenge-actions"><button type="button" disabled={index===0} onClick={()=>moveQuestion(index,-1)} aria-label="Move up"><i className="fa-solid fa-arrow-up"/></button><button type="button" disabled={index===form.questions.length-1} onClick={()=>moveQuestion(index,1)} aria-label="Move down"><i className="fa-solid fa-arrow-down"/></button><button type="button" onClick={()=>change("questions",form.questions.filter((_,i)=>i!==index))}>Remove</button></div></div>
       <div className="challenge-grid"><label>Type<select value={q.type} onChange={(e)=>updateQuestion(index,{type:e.target.value,answerKey:{},options:["SINGLE_CHOICE","MULTIPLE_CHOICE"].includes(e.target.value)?[{id:crypto.randomUUID(),text:""},{id:crypto.randomUUID(),text:""}]:[]})}>
-        {["SINGLE_CHOICE","MULTIPLE_CHOICE","TRUE_FALSE","FILL_BLANK","SHORT_ANSWER","LONG_ANSWER","FILE_UPLOAD"].map((x)=><option key={x}>{x}</option>)}</select></label>
+        {["SINGLE_CHOICE","MULTIPLE_CHOICE","TRUE_FALSE","FILL_BLANK","SHORT_ANSWER","LONG_ANSWER","FILE_UPLOAD","SPEAKING"].map((x)=><option key={x}>{x}</option>)}</select></label>
         <label>Points<input type="number" min="0" value={q.points} onChange={(e)=>updateQuestion(index,{points:e.target.value})}/></label></div>
       <label>Prompt<input value={q.prompt} onChange={(e)=>updateQuestion(index,{prompt:e.target.value})}/></label>
 
@@ -236,7 +237,7 @@ export default function ChallengeEditor() {
         </div>
       </>}
 
-      {["SHORT_ANSWER","LONG_ANSWER","FILE_UPLOAD"].includes(q.type)&&<p className="challenge-muted">This response requires teacher review.</p>}
+      {["SHORT_ANSWER","LONG_ANSWER","FILE_UPLOAD","SPEAKING"].includes(q.type)&&<p className="challenge-muted">This response requires teacher review.</p>}
     </div>)}
       </div>
     </section>
